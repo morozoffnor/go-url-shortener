@@ -23,7 +23,7 @@ func (s *UrlStorage) getFullUrl(shortUrl string) (string, error) {
 	log.Print(s.list)
 	for i, val := range s.list {
 		if val == shortUrl {
-			log.Print("full url - " + i)
+			//log.Print("full url - " + i)
 			return i, nil
 		}
 	}

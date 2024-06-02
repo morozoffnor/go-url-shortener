@@ -43,17 +43,17 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
-	log.Print("Location - " + w.Header().Get("Location"))
-	log.Print("full url (server) - " + v)
+	//log.Print("Location - " + w.Header().Get("Location"))
+	//log.Print("full url (server) - " + v)
 	w.Header().Set("Location", v)
 	w.WriteHeader(307)
-	log.Print("Location - " + w.Header().Get("Location"))
+	//log.Print("Location - " + w.Header().Get("Location"))
 
 }
 
 func RunServer() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /", shortURL)
-	mux.HandleFunc("GET /{id}/", redirect)
+	mux.HandleFunc("GET /{id}", redirect)
 	return http.ListenAndServe(`:8080`, mux)
 }
