@@ -27,7 +27,7 @@ func shortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "text/plain")
+	//w.Header().Set("Content-Type", "text/plain")
 	//w.Header().Write(w)
 	_, err = fmt.Fprint(w, "http://localhost:8080/"+url)
 	if err != nil {
@@ -43,6 +43,7 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
+	log.Print("Location - " + w.Header().Get("Location"))
 	log.Print("full url (server) - " + v)
 	w.Header().Set("Location", v)
 	w.WriteHeader(307)
