@@ -28,9 +28,7 @@ func shortURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "text/plain")
-	log.Print(url)
-	log.Print(urlStorage)
-	_, err = fmt.Fprint(w, url)
+	_, err = fmt.Fprint(w, "http://localhost:8080/"+url)
 	if err != nil {
 		log.Print("error while writing response")
 		return
