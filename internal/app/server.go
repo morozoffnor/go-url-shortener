@@ -45,7 +45,8 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Print("full url (server) - " + v)
 	w.Header().Set("Location", v)
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	w.WriteHeader(307)
+	log.Print("Location - " + w.Header().Get("Location"))
 
 }
 
