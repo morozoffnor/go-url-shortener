@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"log"
 	"math/rand"
 )
 
@@ -20,17 +19,11 @@ func (s *UrlStorage) addNewUrl(full string) (string, error) {
 }
 
 func (s *UrlStorage) getFullUrl(shortUrl string) (string, error) {
-	log.Print(s.list)
 	for i, val := range s.list {
 		if val == shortUrl {
-			//log.Print("full url - " + i)
 			return i, nil
 		}
 	}
-	//value, ok := s.list[shortUrl]
-	//if !ok {
-	//	return value, errors.New("there is no such url")
-	//}
 	return "", errors.New("there is no such url")
 }
 
