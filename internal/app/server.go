@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+var responseAddr string
+
 var urlStorage = URLStorage{
 	list: make(map[string]string),
 }
@@ -35,7 +37,7 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain, utf-8")
 	w.WriteHeader(http.StatusCreated)
-	_, err = fmt.Fprint(w, "http://localhost:8080/"+url)
+	_, err = fmt.Fprint(w, responseAddr+"/"+url)
 	if err != nil {
 		log.Print("error while writing response")
 		return
@@ -52,11 +54,13 @@ func FullURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func RunServer() error {
+func RunServer(addr string, respAddr string) error {
+	responseAddr = respAddr
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/{id}", FullURL)
 	r.Post("/", ShortURL)
 
-	return http.ListenAndServe(`:8080`, r)
+	log.Print("The server is listening on " + addr)
+	return http.ListenAndServe(addr, r)
 }
