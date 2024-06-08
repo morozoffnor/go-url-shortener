@@ -2,10 +2,12 @@ package app
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"io"
 	"log"
 	"net/http"
-	url2 "net/url"
+	urlLib "net/url"
 	"strings"
 )
 
@@ -15,11 +17,12 @@ var urlStorage = UrlStorage{
 
 func ShortURL(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
 		return
 	}
-	decodedBody, err := url2.QueryUnescape(string(body))
+	decodedBody, err := urlLib.QueryUnescape(string(body))
 	if err != nil {
 		http.Error(w, "Failed decoding body", http.StatusBadRequest)
 		return
@@ -45,15 +48,14 @@ func FullUrl(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
-	//w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-	//w.Header().Set("Location", v)
-	//w.WriteHeader(307)
 	http.Redirect(w, r, v, 307)
 }
 
 func RunServer() error {
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /", ShortURL)
-	mux.HandleFunc("GET /{id}", FullUrl)
-	return http.ListenAndServe(`:8080`, mux)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Get("/", FullUrl)
+	r.Post("/", ShortURL)
+
+	return http.ListenAndServe(`:8080`, r)
 }
