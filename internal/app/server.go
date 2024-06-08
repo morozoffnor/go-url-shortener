@@ -48,13 +48,14 @@ func FullURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, v, http.StatusTemporaryRedirect)
+	w.Header().Set("Location", v)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func RunServer() error {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/", FullURL)
+	r.Get("/{id}", FullURL)
 	r.Post("/", ShortURL)
 
 	return http.ListenAndServe(`:8080`, r)
