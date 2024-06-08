@@ -5,11 +5,11 @@ import (
 	"math/rand"
 )
 
-type UrlStorage struct {
+type URLStorage struct {
 	list map[string]string
 }
 
-func (s *UrlStorage) addNewUrl(full string) (string, error) {
+func (s *URLStorage) addNewURL(full string) (string, error) {
 	if f, ok := s.list[full]; ok {
 		return f, nil
 	}
@@ -18,7 +18,7 @@ func (s *UrlStorage) addNewUrl(full string) (string, error) {
 	return randChars, nil
 }
 
-func (s *UrlStorage) getFullUrl(shortUrl string) (string, error) {
+func (s *URLStorage) getFullURL(shortUrl string) (string, error) {
 	for i, val := range s.list {
 		if val == shortUrl {
 			return i, nil

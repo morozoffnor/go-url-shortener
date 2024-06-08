@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var urlStorage = UrlStorage{
+var urlStorage = URLStorage{
 	list: make(map[string]string),
 }
 
@@ -28,7 +28,7 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
-	url, err := urlStorage.addNewUrl(decodedBody)
+	url, err := urlStorage.addNewURL(decodedBody)
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
@@ -42,19 +42,19 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func FullUrl(w http.ResponseWriter, r *http.Request) {
-	v, err := urlStorage.getFullUrl(r.PathValue("id"))
+func FullURL(w http.ResponseWriter, r *http.Request) {
+	v, err := urlStorage.getFullURL(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, v, 307)
+	http.Redirect(w, r, v, http.StatusTemporaryRedirect)
 }
 
 func RunServer() error {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/", FullUrl)
+	r.Get("/", FullURL)
 	r.Post("/", ShortURL)
 
 	return http.ListenAndServe(`:8080`, r)

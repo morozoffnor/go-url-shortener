@@ -30,7 +30,7 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 	var lastResult string
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := &UrlStorage{
+			s := &URLStorage{
 				list: test.list,
 			}
 			for _, full := range test.urls {
@@ -76,7 +76,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage := &UrlStorage{
+			storage := &URLStorage{
 				list: test.list,
 			}
 			for _, url := range test.urls {
