@@ -34,7 +34,7 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 				list: test.list,
 			}
 			for _, full := range test.urls {
-				result, _ := s.addNewUrl(full)
+				result, _ := s.addNewURL(full)
 				assert.IsType(t, "", result)
 				if len(lastResult) > 0 {
 					assert.Equal(t, result, lastResult)
@@ -80,7 +80,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 				list: test.list,
 			}
 			for _, url := range test.urls {
-				full, err := storage.getFullUrl(url.short)
+				full, err := storage.getFullURL(url.short)
 				if !test.wantErr {
 					require.Equal(t, url.full, full)
 				} else {
