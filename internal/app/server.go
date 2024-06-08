@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	url2 "net/url"
+	"strings"
 )
 
 var urlStorage = UrlStorage{
@@ -17,7 +19,13 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
 		return
 	}
-	url, err := urlStorage.addNewUrl(string(body))
+	decodedBody, err := url2.QueryUnescape(string(body))
+	if err != nil {
+		http.Error(w, "Failed decoding body", http.StatusBadRequest)
+		return
+	}
+	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
+	url, err := urlStorage.addNewUrl(decodedBody)
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
@@ -37,8 +45,10 @@ func FullUrl(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Location", v)
-	w.WriteHeader(307)
+	//w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+	//w.Header().Set("Location", v)
+	//w.WriteHeader(307)
+	http.Redirect(w, r, v, 307)
 }
 
 func RunServer() error {
