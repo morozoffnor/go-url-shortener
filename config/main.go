@@ -16,7 +16,7 @@ func init() {
 func NewServerConfig() ServerType {
 	c := ServerType{}
 	flag.StringVar(&c.ServerAddr, "a", ":8080", "server port")
-	flag.StringVar(&c.ResultAddr, "b", ":8080", "port for short links")
+	flag.StringVar(&c.ResultAddr, "b", "http://localhost:8080", "port for short links")
 	flag.Parse()
 	return c
 }
