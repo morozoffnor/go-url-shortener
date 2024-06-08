@@ -101,16 +101,17 @@ func TestFullUrl(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			url, _ := urlStorage.addNewUrl("http://test.xyz/")
+			url, _ := urlStorage.addNewURL("http://test.xyz/")
 			if !test.want.checkLocation {
 				url = "DoNotCare"
 			}
 			request := httptest.NewRequest(http.MethodGet, "/"+url, nil)
 			request.SetPathValue("id", url)
 			w := httptest.NewRecorder()
-			FullUrl(w, request)
+			FullURL(w, request)
 
 			res := w.Result()
+			defer res.Body.Close()
 			assert.Equal(t, test.want.code, res.StatusCode)
 			if test.want.checkLocation {
 				assert.Equal(t, test.want.url, res.Header.Get("Location"))
