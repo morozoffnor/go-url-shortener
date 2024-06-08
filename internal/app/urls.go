@@ -18,9 +18,9 @@ func (s *URLStorage) addNewURL(full string) (string, error) {
 	return randChars, nil
 }
 
-func (s *URLStorage) getFullURL(shortUrl string) (string, error) {
+func (s *URLStorage) getFullURL(shortURL string) (string, error) {
 	for i, val := range s.list {
-		if val == shortUrl {
+		if val == shortURL {
 			return i, nil
 		}
 	}

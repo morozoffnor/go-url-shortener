@@ -77,12 +77,12 @@ func TestFullUrl(t *testing.T) {
 	}
 	tests := []struct {
 		name     string
-		shortUrl string
+		shortURL string
 		want     want
 	}{
 		{
 			name:     "Positive test (get full url)",
-			shortUrl: "/TeSt",
+			shortURL: "/TeSt",
 			want: want{
 				code:          http.StatusTemporaryRedirect,
 				url:           "http://test.xyz/",
@@ -91,7 +91,7 @@ func TestFullUrl(t *testing.T) {
 		},
 		{
 			name:     "Negative test (url does not exist)",
-			shortUrl: "/TeSt",
+			shortURL: "/TeSt",
 			want: want{
 				code:          http.StatusBadRequest,
 				url:           "http://test.xyz/",
