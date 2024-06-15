@@ -1,4 +1,4 @@
-package app
+package internal
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 var responseAddr string
 
-var urlStorage = URLStorage{
+var urlStorage = &URLStorage{
 	list: make(map[string]string),
 }
 
