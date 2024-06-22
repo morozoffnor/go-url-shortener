@@ -1,7 +1,8 @@
-package internal
+package handlers
 
 import (
 	"bytes"
+	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -101,7 +102,7 @@ func TestFullUrl(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			url, _ := urlStorage.addNewURL("http://test.xyz/")
+			url, _ := storage.URLs.AddNewURL("http://test.xyz/")
 			if !test.want.checkLocation {
 				url = "DoNotCare"
 			}

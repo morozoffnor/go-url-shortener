@@ -1,4 +1,4 @@
-package internal
+package storage
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -31,10 +31,10 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s := &URLStorage{
-				list: test.list,
+				List: test.list,
 			}
 			for _, full := range test.urls {
-				result, _ := s.addNewURL(full)
+				result, _ := s.AddNewURL(full)
 				assert.IsType(t, "", result)
 				if len(lastResult) > 0 {
 					assert.Equal(t, result, lastResult)
@@ -77,10 +77,10 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			storage := &URLStorage{
-				list: test.list,
+				List: test.list,
 			}
 			for _, url := range test.urls {
-				full, err := storage.getFullURL(url.short)
+				full, err := storage.GetFullURL(url.short)
 				if !test.wantErr {
 					require.Equal(t, url.full, full)
 				} else {
