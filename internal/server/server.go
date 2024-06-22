@@ -2,8 +2,8 @@ package server
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/morozoffnor/go-url-shortener/internal/handlers"
+	"github.com/morozoffnor/go-url-shortener/internal/middlewares"
 	"log"
 	"net/http"
 )
@@ -11,7 +11,7 @@ import (
 func RunServer(addr string, respAddr string) error {
 	handlers.ResponseAddr = respAddr
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(middlewares.Log)
 	r.Get("/{id}", handlers.FullURL)
 	r.Post("/", handlers.ShortURL)
 
