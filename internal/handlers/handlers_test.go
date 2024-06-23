@@ -166,6 +166,7 @@ func TestShorten(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			for _, body := range test.body {
 				jsonReqBody, err := json.Marshal(body)
+				require.NoError(t, err)
 				request := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonReqBody))
 
 				w := httptest.NewRecorder()
