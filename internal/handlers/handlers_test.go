@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -118,6 +119,75 @@ func TestFullUrl(t *testing.T) {
 				assert.Equal(t, test.want.url, res.Header.Get("Location"))
 			}
 
+		})
+	}
+}
+
+func TestShorten(t *testing.T) {
+	type reqBody struct {
+		URL string `json:"url"`
+	}
+	type resBody struct {
+		Result string `json:"result"`
+	}
+	type want struct {
+		code        int
+		response    resBody
+		contentType string
+	}
+
+	tests := []struct {
+		name string
+		body []reqBody
+		want want
+	}{
+		{
+			name: "Test json request",
+			body: []reqBody{{URL: "http://test.com/"}},
+			want: want{
+				code:        http.StatusCreated,
+				response:    resBody{},
+				contentType: "application/json",
+			},
+		},
+		{
+			name: "Positive test #2 (post the same full url twice)",
+			body: []reqBody{{URL: "http://test.com/"}, {URL: "http://test.com/"}},
+			want: want{
+				code:        http.StatusCreated,
+				response:    resBody{},
+				contentType: "application/json",
+			},
+		},
+	}
+
+	var lastRes string
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			for _, body := range test.body {
+				jsonReqBody, err := json.Marshal(body)
+				request := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonReqBody))
+
+				w := httptest.NewRecorder()
+				Shorten(w, request)
+
+				res := w.Result()
+
+				assert.Equal(t, test.want.code, res.StatusCode)
+				defer res.Body.Close()
+				var rBody resBody
+				var buf bytes.Buffer
+				_, err = buf.ReadFrom(res.Body)
+				require.NoError(t, err)
+				err = json.Unmarshal(buf.Bytes(), &rBody)
+				require.NoError(t, err)
+				assert.NotEmpty(t, rBody)
+				if lastRes != "" {
+					assert.Equal(t, lastRes, rBody.Result)
+				}
+				lastRes = rBody.Result
+				assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			}
 		})
 	}
 }

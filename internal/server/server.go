@@ -14,6 +14,7 @@ func RunServer(addr string, respAddr string) error {
 	r.Use(middlewares.Log)
 	r.Get("/{id}", handlers.FullURL)
 	r.Post("/", handlers.ShortURL)
+	r.Post("/api/shorten", handlers.Shorten)
 
 	log.Print("The server is listening on " + addr)
 	return http.ListenAndServe(addr, r)

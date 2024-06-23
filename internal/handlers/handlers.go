@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"io"
@@ -47,4 +49,40 @@ func FullURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Location", v)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func Shorten(w http.ResponseWriter, r *http.Request) {
+	type reqBody struct {
+		URL string `json:"url"`
+	}
+	type resBody struct {
+		Result string `json:"result"`
+	}
+	var raw bytes.Buffer
+	if _, err := raw.ReadFrom(r.Body); err != nil {
+		http.Error(w, "Invalid body", http.StatusUnprocessableEntity)
+		return
+	}
+
+	body := &reqBody{}
+	err := json.Unmarshal(raw.Bytes(), body)
+	if err != nil {
+		http.Error(w, "Invalid json", http.StatusUnprocessableEntity)
+		return
+	}
+
+	url, err := storage.URLs.AddNewURL(body.URL)
+	if err != nil {
+		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	short := &resBody{Result: ResponseAddr + "/" + url}
+	resp, err := json.Marshal(short)
+	if err != nil {
+		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
+	}
+	w.Write(resp)
 }
