@@ -1,4 +1,4 @@
-package internal
+package storage
 
 import (
 	"errors"
@@ -6,20 +6,24 @@ import (
 )
 
 type URLStorage struct {
-	list map[string]string
+	List map[string]string
 }
 
-func (s *URLStorage) addNewURL(full string) (string, error) {
-	if f, ok := s.list[full]; ok {
+var URLs = &URLStorage{
+	List: make(map[string]string),
+}
+
+func (s *URLStorage) AddNewURL(full string) (string, error) {
+	if f, ok := s.List[full]; ok {
 		return f, nil
 	}
 	randChars := createRandomCharSeq()
-	s.list[full] = randChars
+	s.List[full] = randChars
 	return randChars, nil
 }
 
-func (s *URLStorage) getFullURL(shortURL string) (string, error) {
-	for i, val := range s.list {
+func (s *URLStorage) GetFullURL(shortURL string) (string, error) {
+	for i, val := range s.List {
 		if val == shortURL {
 			return i, nil
 		}
