@@ -48,8 +48,7 @@ func FullURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Location", v)
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	http.Redirect(w, r, v, http.StatusTemporaryRedirect)
 	log.Print(w.Header().Get("location"))
 }
 
