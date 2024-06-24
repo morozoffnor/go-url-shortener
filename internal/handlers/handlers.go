@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
-	"io"
 	"log"
 	"net/http"
 	urlLib "net/url"
@@ -15,8 +14,7 @@ import (
 var ResponseAddr string
 
 func ShortURL(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+	body, err := GetBody(r)
 	if err != nil {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
 		return
