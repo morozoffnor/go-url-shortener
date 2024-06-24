@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"compress/gzip"
 	"github.com/morozoffnor/go-url-shortener/internal/types"
 	"net/http"
 	"strings"
@@ -13,14 +12,14 @@ func Compress(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 			return
 		}
-		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
-		if err != nil {
-			Logger.Error(w, err.Error())
-			return
-		}
-		defer gz.Close()
+		//gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
+		//if err != nil {
+		//	Logger.Error(w, err.Error())
+		//	return
+		//}
+		//defer gz.Close()
 		w.Header().Set("Content-Encoding", "gzip")
-		h.ServeHTTP(types.GzipWriter{ResponseWriter: w, Writer: gz}, r)
+		h.ServeHTTP(types.NewGzipWriter(w), r)
 	}
 
 	return http.HandlerFunc(compress)

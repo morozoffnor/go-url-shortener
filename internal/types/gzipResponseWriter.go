@@ -1,13 +1,13 @@
 package types
 
 import (
-	"io"
+	"compress/gzip"
 	"net/http"
 )
 
 type GzipWriter struct {
-	http.ResponseWriter
-	Writer io.Writer
+	ResponseWriter http.ResponseWriter
+	Writer         *gzip.Writer
 }
 
 func (w GzipWriter) Write(b []byte) (int, error) {
@@ -15,13 +15,18 @@ func (w GzipWriter) Write(b []byte) (int, error) {
 }
 
 func (w GzipWriter) Header() http.Header {
-	return w.Header()
+	return w.ResponseWriter.Header()
 }
 
 func (w GzipWriter) WriteHeader(statusCode int) {
-	w.WriteHeader(statusCode)
+	w.ResponseWriter.WriteHeader(statusCode)
 }
 
 func (w GzipWriter) Close() error {
-	return w.Close()
+	return w.Writer.Close()
+}
+
+func NewGzipWriter(w http.ResponseWriter) *GzipWriter {
+	return &GzipWriter{ResponseWriter: w,
+		Writer: gzip.NewWriter(w)}
 }
