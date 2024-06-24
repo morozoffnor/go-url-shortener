@@ -27,6 +27,9 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
+	if len(decodedBody) < 1 {
+		return
+	}
 	url, err := storage.URLs.AddNewURL(decodedBody)
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
@@ -72,6 +75,9 @@ func Shorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(body.URL) < 1 {
+		return
+	}
 	url, err := storage.URLs.AddNewURL(body.URL)
 	log.Print(storage.URLs.List)
 	if err != nil {
