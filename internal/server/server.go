@@ -11,8 +11,9 @@ import (
 func RunServer(addr string, respAddr string) error {
 	handlers.ResponseAddr = respAddr
 	r := chi.NewRouter()
-	r.Use(middlewares.Log)
 	r.Use(middlewares.Compress)
+	r.Use(middlewares.Log)
+
 	r.Get("/{id}", handlers.FullURL)
 	r.Post("/", handlers.ShortURL)
 	r.Post("/api/shorten", handlers.Shorten)

@@ -26,10 +26,8 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed decoding body", http.StatusBadRequest)
 		return
 	}
+	log.Print(decodedBody)
 	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
-	if len(decodedBody) < 1 {
-		return
-	}
 	url, err := storage.URLs.AddNewURL(decodedBody)
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
@@ -70,12 +68,9 @@ func Shorten(w http.ResponseWriter, r *http.Request) {
 
 	body := &reqBody{}
 	err := json.Unmarshal(raw.Bytes(), body)
+	log.Print(body)
 	if err != nil {
 		http.Error(w, "Invalid json", http.StatusUnprocessableEntity)
-		return
-	}
-
-	if len(body.URL) < 1 {
 		return
 	}
 	url, err := storage.URLs.AddNewURL(body.URL)
