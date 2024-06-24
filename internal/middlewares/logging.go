@@ -40,6 +40,8 @@ func Log(h http.Handler) http.Handler {
 			"status", respData.Status,
 			"duration", duration,
 			"size", respData.Size,
+			"accept-encoding", r.Header.Get("Accept-Encoding"),
+			"content-encoding", r.Header.Get("Content-Encoding"),
 		)
 	}
 

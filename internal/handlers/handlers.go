@@ -28,13 +28,13 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 	}
 	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
 	url, err := storage.URLs.AddNewURL(decodedBody)
-	log.Print(storage.URLs.List)
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain, utf-8")
 	w.WriteHeader(http.StatusCreated)
+	log.Print(storage.URLs.List)
 	_, err = fmt.Fprint(w, ResponseAddr+"/"+url)
 	if err != nil {
 		log.Print("error while writing response")
