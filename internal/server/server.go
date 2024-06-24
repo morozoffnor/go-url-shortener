@@ -11,12 +11,10 @@ import (
 func RunServer(addr string, respAddr string) error {
 	handlers.ResponseAddr = respAddr
 	r := chi.NewRouter()
-	r.Use(middlewares.Compress)
 	r.Use(middlewares.Log)
-
 	r.Get("/{id}", handlers.FullURL)
-	r.Post("/", handlers.ShortURL)
-	r.Post("/api/shorten", handlers.Shorten)
+	r.Post("/", middlewares.Compress(handlers.ShortURL))
+	r.Post("/api/shorten", middlewares.Compress(handlers.Shorten))
 
 	log.Print("The server is listening on " + addr)
 	return http.ListenAndServe(addr, r)
