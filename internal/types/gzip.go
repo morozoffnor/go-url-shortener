@@ -25,9 +25,7 @@ func (w GzipWriter) Header() http.Header {
 }
 
 func (w GzipWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
-		w.ResponseWriter.Header().Set("Content-Encoding", "gzip")
-	}
+	w.ResponseWriter.Header().Set("Content-Encoding", "gzip")
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 

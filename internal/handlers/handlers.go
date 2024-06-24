@@ -49,6 +49,7 @@ func FullURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Location", v)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+	log.Print(w.Header().Get("location"))
 }
 
 func Shorten(w http.ResponseWriter, r *http.Request) {
