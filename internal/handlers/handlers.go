@@ -26,7 +26,8 @@ func ShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed decoding body", http.StatusBadRequest)
 		return
 	}
-	log.Print(decodedBody)
+	log.Print("body: ", body)
+	log.Print("decoded body: ", decodedBody)
 	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
 	url, err := storage.URLs.AddNewURL(decodedBody)
 	if err != nil {
