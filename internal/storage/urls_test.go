@@ -55,7 +55,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 	tests := []struct {
 		name     string
 		URLs     []*url
-		shortUrl string
+		shortURL string
 		wantErr  bool
 	}{
 		{
@@ -63,13 +63,13 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 			URLs: []*url{
 				{UUID: "1", ShortURL: "Test", OriginalURL: "http://test.com"},
 			},
-			shortUrl: "Test",
+			shortURL: "Test",
 			wantErr:  false,
 		},
 		{
 			name:     "Get url that does not exist",
 			URLs:     []*url{},
-			shortUrl: "Test",
+			shortURL: "Test",
 			wantErr:  true,
 		},
 	}
@@ -81,7 +81,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 			URLs.mu.Lock()
 			URLs.List = append(URLs.List, test.URLs...)
 			URLs.mu.Unlock()
-			full, err := URLs.GetFullURL(test.shortUrl)
+			full, err := URLs.GetFullURL(test.shortURL)
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)
 			} else {
