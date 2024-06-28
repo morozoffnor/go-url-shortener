@@ -1,10 +1,18 @@
 package storage
 
 import (
+	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 )
+
+func init() {
+	tmpFile, _ := os.CreateTemp(os.TempDir(), "dbtest*.json")
+	tmpFile.Close()
+	config.Server.FileStoragePath = tmpFile.Name()
+}
 
 func TestUrlStorage_addNewUrl(t *testing.T) {
 	tests := []struct {
@@ -30,11 +38,10 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 	var lastResult string
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := &URLStorage{
-				List: test.list,
-			}
+			storage := newURLStorage()
 			for _, full := range test.urls {
-				result, _ := s.AddNewURL(full)
+				result, err := storage.AddNewURL(full)
+				require.NoError(t, err)
 				assert.IsType(t, "", result)
 				if len(lastResult) > 0 {
 					assert.Equal(t, result, lastResult)
@@ -45,48 +52,42 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 }
 
 func TestUrlStorage_getFullUrl(t *testing.T) {
-	type url struct {
-		short string
-		full  string
-	}
 	tests := []struct {
-		name    string
-		list    map[string]string
-		urls    []url
-		wantErr bool
+		name     string
+		URLs     []*url
+		shortUrl string
+		wantErr  bool
 	}{
 		{
 			name: "Get full url",
-			list: map[string]string{
-				"http://test.com": "GhydF",
+			URLs: []*url{
+				{UUID: "1", ShortURL: "Test", OriginalURL: "http://test.com"},
 			},
-			urls: []url{
-				{short: "GhydF", full: "http://test.com"},
-			},
-			wantErr: false,
+			shortUrl: "Test",
+			wantErr:  false,
 		},
 		{
-			name: "Get url that does not exist",
-			list: map[string]string{},
-			urls: []url{
-				{short: "Test", full: "http://test.com"},
-			},
-			wantErr: true,
+			name:     "Get url that does not exist",
+			URLs:     []*url{},
+			shortUrl: "Test",
+			wantErr:  true,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage := &URLStorage{
-				List: test.list,
+			URLs = newURLStorage()
+
+			URLs.mu.Lock()
+			URLs.List = append(URLs.List, test.URLs...)
+			URLs.mu.Unlock()
+			full, err := URLs.GetFullURL(test.shortUrl)
+			if !test.wantErr {
+				require.Equal(t, "http://test.com", full)
+			} else {
+				assert.Error(t, err)
 			}
-			for _, url := range test.urls {
-				full, err := storage.GetFullURL(url.short)
-				if !test.wantErr {
-					require.Equal(t, url.full, full)
-				} else {
-					assert.Error(t, err)
-				}
-			}
+
 		})
 	}
 }

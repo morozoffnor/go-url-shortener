@@ -3,14 +3,22 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
+
+func init() {
+
+	config.Server.FileStoragePath = ""
+}
 
 func TestShortURL(t *testing.T) {
 	type want struct {
@@ -45,7 +53,10 @@ func TestShortURL(t *testing.T) {
 	var lastRes []byte
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
+			tmpFile, ferr := os.CreateTemp(os.TempDir(), "dbtest*.json")
+			require.Nil(t, ferr)
+			tmpFile.Close()
+			config.Server.FileStoragePath = tmpFile.Name()
 			for _, body := range test.body {
 				rBody := bytes.NewBuffer([]byte(body))
 				request := httptest.NewRequest(http.MethodPost, "/", rBody)
@@ -58,6 +69,7 @@ func TestShortURL(t *testing.T) {
 				assert.Equal(t, test.want.code, res.StatusCode)
 				defer res.Body.Close()
 				resBody, err := io.ReadAll(res.Body)
+				log.Print("test res body ", resBody)
 				require.NoError(t, err)
 				assert.NotEmpty(t, resBody)
 				if lastRes != nil {
@@ -103,6 +115,10 @@ func TestFullUrl(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
+			require.Nil(t, err)
+			tmpFile.Close()
+			config.Server.FileStoragePath = tmpFile.Name()
 			url, _ := storage.URLs.AddNewURL("http://test.xyz/")
 			if !test.want.checkLocation {
 				url = "DoNotCare"
@@ -164,6 +180,10 @@ func TestShorten(t *testing.T) {
 	var lastRes string
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			tmpFile, ferr := os.CreateTemp(os.TempDir(), "dbtest*.json")
+			require.Nil(t, ferr)
+			tmpFile.Close()
+			config.Server.FileStoragePath = tmpFile.Name()
 			for _, body := range test.body {
 				jsonReqBody, err := json.Marshal(body)
 				require.NoError(t, err)

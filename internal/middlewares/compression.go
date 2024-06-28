@@ -15,18 +15,6 @@ func Compress(h http.HandlerFunc) http.HandlerFunc {
 			defer gzipWriter.Close()
 		}
 
-		//if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-		//	gzipReader, err := types.NewGzipReader(r.Body)
-		//	if err != nil {
-		//		log.Print(err.Error())
-		//		w.WriteHeader(http.StatusInternalServerError)
-		//		return
-		//	}
-		//
-		//	r.Body = gzipReader
-		//	defer gzipReader.Close()
-		//}
-
 		h.ServeHTTP(nw, r)
 
 	}
