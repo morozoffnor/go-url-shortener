@@ -8,12 +8,6 @@ import (
 	"testing"
 )
 
-func init() {
-	tmpFile, _ := os.CreateTemp(os.TempDir(), "dbtest*.json")
-	tmpFile.Close()
-	config.Server.FileStoragePath = tmpFile.Name()
-}
-
 func TestUrlStorage_addNewUrl(t *testing.T) {
 	tests := []struct {
 		name string
@@ -38,9 +32,17 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 	var lastResult string
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage := newURLStorage()
+			cfg := &config.ServerConfig{
+				ServerAddr:      ":8080",
+				ResultAddr:      "http://localhost:8080",
+				FileStoragePath: "/tmp/test.json",
+			}
+			strg := New(cfg)
+			tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
+			require.Nil(t, err)
+			defer tmpFile.Close()
 			for _, full := range test.urls {
-				result, err := storage.AddNewURL(full)
+				result, err := strg.AddNewURL(full)
 				require.NoError(t, err)
 				assert.IsType(t, "", result)
 				if len(lastResult) > 0 {
@@ -76,12 +78,20 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			URLs = newURLStorage()
+			cfg := &config.ServerConfig{
+				ServerAddr:      ":8080",
+				ResultAddr:      "http://localhost:8080",
+				FileStoragePath: "/tmp/test.json",
+			}
+			strg := New(cfg)
+			tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
+			require.Nil(t, err)
+			defer tmpFile.Close()
 
-			URLs.mu.Lock()
-			URLs.List = append(URLs.List, test.URLs...)
-			URLs.mu.Unlock()
-			full, err := URLs.GetFullURL(test.shortURL)
+			strg.mu.Lock()
+			strg.List = append(strg.List, test.URLs...)
+			strg.mu.Unlock()
+			full, err := strg.GetFullURL(test.shortURL)
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)
 			} else {
