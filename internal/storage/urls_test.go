@@ -69,8 +69,10 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "Get url that does not exist",
-			URLs:     []*url{},
+			name: "Get url that does not exist",
+			URLs: []*url{
+				{UUID: "2", ShortURL: "Test", OriginalURL: ""},
+			},
 			shortURL: "Test",
 			wantErr:  true,
 		},
@@ -88,10 +90,8 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 			require.Nil(t, err)
 			defer tmpFile.Close()
 
-			strg.mu.Lock()
-			strg.List = append(strg.List, test.URLs...)
-			strg.mu.Unlock()
-			full, err := strg.GetFullURL(test.shortURL)
+			shortURL, err := strg.AddNewURL(test.URLs[0].OriginalURL)
+			full, err := strg.GetFullURL(shortURL)
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)
 			} else {

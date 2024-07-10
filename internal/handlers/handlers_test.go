@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -72,7 +71,6 @@ func TestShortURL(t *testing.T) {
 				assert.Equal(t, test.want.code, res.StatusCode)
 				defer res.Body.Close()
 				resBody, err := io.ReadAll(res.Body)
-				log.Print("test res body ", resBody)
 				require.NoError(t, err)
 				assert.NotEmpty(t, resBody)
 				if lastRes != nil {
