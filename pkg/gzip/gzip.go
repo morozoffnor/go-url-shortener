@@ -11,7 +11,7 @@ type Writer struct {
 	Writer         *gzip.Writer
 }
 
-func NewGzipWriter(w http.ResponseWriter) *Writer {
+func NewWriter(w http.ResponseWriter) *Writer {
 	return &Writer{ResponseWriter: w,
 		Writer: gzip.NewWriter(w)}
 }
@@ -38,7 +38,7 @@ type Reader struct {
 	reader *gzip.Reader
 }
 
-func NewGzipReader(r io.ReadCloser) (*Reader, error) {
+func NewReader(r io.ReadCloser) (*Reader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, err

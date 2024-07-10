@@ -10,7 +10,7 @@ func Compress(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nw := w
 		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			gzipWriter := gzip.NewGzipWriter(w)
+			gzipWriter := gzip.NewWriter(w)
 			nw = gzipWriter
 			defer gzipWriter.Close()
 		}

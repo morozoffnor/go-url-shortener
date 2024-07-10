@@ -20,7 +20,7 @@ func newRouter(cfg *config.ServerConfig, s *storage.URLStorage) *chi.Mux {
 }
 
 func RunServer(cfg *config.ServerConfig) error {
-	s := storage.NewURLStorage(cfg)
+	s := storage.New(cfg)
 	r := newRouter(cfg, s)
 
 	log.Print("The server is listening on " + cfg.ServerAddr)

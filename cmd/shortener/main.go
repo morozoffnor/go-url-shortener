@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	cfg := config.NewConfig()
+	cfg := config.New()
 
 	if err := server.RunServer(cfg); err != nil {
 		panic(err)

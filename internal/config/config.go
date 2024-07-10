@@ -11,8 +11,6 @@ type ServerConfig struct {
 	FileStoragePath string
 }
 
-//var Config = NewConfig()
-
 func (config *ServerConfig) UpdateByOptions(o *ServerConfigFlags) {
 	config.ServerAddr = o.ServerAddr
 	config.ResultAddr = strings.Trim(o.ResultAddr, "/")
@@ -35,7 +33,7 @@ func (config *ServerConfig) PopulateConfigFromEnv() {
 	}
 }
 
-func NewConfig() *ServerConfig {
+func New() *ServerConfig {
 	c := &ServerConfig{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
