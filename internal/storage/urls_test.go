@@ -90,7 +90,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 			require.Nil(t, err)
 			defer tmpFile.Close()
 
-			shortURL, err := strg.AddNewURL(test.URLs[0].OriginalURL)
+			shortURL, _ := strg.AddNewURL(test.URLs[0].OriginalURL)
 			full, err := strg.GetFullURL(shortURL)
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)
