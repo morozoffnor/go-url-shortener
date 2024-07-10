@@ -4,11 +4,21 @@ import (
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"log"
 	"os"
 	"testing"
 )
 
 func TestUrlStorage_addNewUrl(t *testing.T) {
+	cfg := &config.ServerConfig{
+		ServerAddr:      ":8080",
+		ResultAddr:      "http://localhost:8080",
+		FileStoragePath: "/tmp/test.json",
+	}
+	strg := New(cfg)
+	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
+	require.Nil(t, err)
+	defer tmpFile.Close()
 	tests := []struct {
 		name string
 		list map[string]string
@@ -32,19 +42,12 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 	var lastResult string
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := &config.ServerConfig{
-				ServerAddr:      ":8080",
-				ResultAddr:      "http://localhost:8080",
-				FileStoragePath: "/tmp/test.json",
-			}
-			strg := New(cfg)
-			tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
-			require.Nil(t, err)
-			defer tmpFile.Close()
+
 			for _, full := range test.urls {
 				result, err := strg.AddNewURL(full)
 				require.NoError(t, err)
 				assert.IsType(t, "", result)
+				log.Print(result)
 				if len(lastResult) > 0 {
 					assert.Equal(t, result, lastResult)
 				}
