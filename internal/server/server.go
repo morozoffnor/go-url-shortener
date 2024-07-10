@@ -6,7 +6,6 @@ import (
 	"github.com/morozoffnor/go-url-shortener/internal/handlers"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/morozoffnor/go-url-shortener/pkg/middlewares"
-	"log"
 	"net/http"
 )
 
@@ -19,10 +18,17 @@ func newRouter(cfg *config.ServerConfig, s *storage.URLStorage) *chi.Mux {
 	return r
 }
 
-func RunServer(cfg *config.ServerConfig) error {
-	s := storage.New(cfg)
-	r := newRouter(cfg, s)
-
-	log.Print("The server is listening on " + cfg.ServerAddr)
-	return http.ListenAndServe(cfg.ServerAddr, r)
+func New(cfg *config.ServerConfig) *http.Server {
+	strg := storage.New(cfg)
+	s := &http.Server{
+		Addr:    cfg.ServerAddr,
+		Handler: newRouter(cfg, strg),
+	}
+	return s
 }
+
+//func RunServer(cfg *config.ServerConfig) error {
+//	s := New(cfg)
+//	log.Print("The server is listening on " + cfg.ServerAddr)
+//	return http.ListenAndServe(cfg.ServerAddr, r)
+//}
