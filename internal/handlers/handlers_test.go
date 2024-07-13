@@ -15,7 +15,7 @@ import (
 )
 
 func TestShortURL(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
@@ -86,7 +86,7 @@ func TestShortURL(t *testing.T) {
 }
 
 func TestFullUrl(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
@@ -150,7 +150,7 @@ func TestFullUrl(t *testing.T) {
 }
 
 func TestShorten(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",

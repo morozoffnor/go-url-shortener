@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/server"
@@ -13,7 +12,6 @@ import (
 )
 
 func main() {
-	flag.Parse()
 	cfg := config.New()
 	s := server.New(cfg)
 

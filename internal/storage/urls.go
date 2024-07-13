@@ -13,7 +13,7 @@ import (
 
 type URLStorage struct {
 	mu   *sync.Mutex
-	cfg  *config.ServerConfig
+	cfg  *config.Config
 	List []*url
 }
 
@@ -25,7 +25,7 @@ type url struct {
 
 //var URLs = newURLStorage()
 
-func New(cfg *config.ServerConfig) *URLStorage {
+func New(cfg *config.Config) *URLStorage {
 	u := &URLStorage{
 		List: []*url{},
 		mu:   &sync.Mutex{},

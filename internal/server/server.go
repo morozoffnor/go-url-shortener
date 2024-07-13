@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func newRouter(cfg *config.ServerConfig, s *storage.URLStorage) *chi.Mux {
+func newRouter(cfg *config.Config, s *storage.URLStorage) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Log)
 	r.Get("/{id}", handlers.NewFullURLHandler(cfg, s))
@@ -18,7 +18,7 @@ func newRouter(cfg *config.ServerConfig, s *storage.URLStorage) *chi.Mux {
 	return r
 }
 
-func New(cfg *config.ServerConfig) *http.Server {
+func New(cfg *config.Config) *http.Server {
 	strg := storage.New(cfg)
 	s := &http.Server{
 		Addr:    cfg.ServerAddr,
@@ -27,7 +27,7 @@ func New(cfg *config.ServerConfig) *http.Server {
 	return s
 }
 
-//func RunServer(cfg *config.ServerConfig) error {
+//func RunServer(cfg *config.Config) error {
 //	s := New(cfg)
 //	log.Print("The server is listening on " + cfg.ServerAddr)
 //	return http.ListenAndServe(cfg.ServerAddr, r)

@@ -10,7 +10,7 @@ import (
 )
 
 func TestUrlStorage_addNewUrl(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
@@ -83,7 +83,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := &config.ServerConfig{
+			cfg := &config.Config{
 				ServerAddr:      ":8080",
 				ResultAddr:      "http://localhost:8080",
 				FileStoragePath: "/tmp/test.json",

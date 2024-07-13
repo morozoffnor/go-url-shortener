@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func NewShortURLHandler(cfg *config.ServerConfig, s *storage.URLStorage) http.HandlerFunc {
+func NewShortURLHandler(cfg *config.Config, s *storage.URLStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := pkg.GetBody(r)
 		if err != nil {
@@ -42,7 +42,7 @@ func NewShortURLHandler(cfg *config.ServerConfig, s *storage.URLStorage) http.Ha
 	}
 }
 
-func NewFullURLHandler(cfg *config.ServerConfig, s *storage.URLStorage) http.HandlerFunc {
+func NewFullURLHandler(cfg *config.Config, s *storage.URLStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		v, err := s.GetFullURL(r.PathValue("id"))
 		if err != nil {
@@ -54,7 +54,7 @@ func NewFullURLHandler(cfg *config.ServerConfig, s *storage.URLStorage) http.Han
 	}
 }
 
-func NewShortenHandler(cfg *config.ServerConfig, s *storage.URLStorage) http.HandlerFunc {
+func NewShortenHandler(cfg *config.Config, s *storage.URLStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type reqBody struct {
 			URL string `json:"url"`
