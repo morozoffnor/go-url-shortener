@@ -21,7 +21,7 @@ func newRouter(h *handlers.Handlers) *chi.Mux {
 }
 
 func New(cfg *config.Config) *http.Server {
-	strg := storage.New(cfg)
+	strg := storage.NewURLStorage(cfg)
 	h := handlers.New(cfg, strg)
 	s := &http.Server{
 		Addr:    cfg.ServerAddr,
@@ -29,9 +29,3 @@ func New(cfg *config.Config) *http.Server {
 	}
 	return s
 }
-
-//func RunServer(cfg *config.Config) error {
-//	s := New(cfg)
-//	log.Print("The server is listening on " + cfg.ServerAddr)
-//	return http.ListenAndServe(cfg.ServerAddr, r)
-//}

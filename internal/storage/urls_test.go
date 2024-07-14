@@ -15,7 +15,7 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := New(cfg)
+	strg := NewURLStorage(cfg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -88,7 +88,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 				ResultAddr:      "http://localhost:8080",
 				FileStoragePath: "/tmp/test.json",
 			}
-			strg := New(cfg)
+			strg := NewURLStorage(cfg)
 			tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 			require.Nil(t, err)
 			defer tmpFile.Close()

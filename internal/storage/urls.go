@@ -25,7 +25,7 @@ type url struct {
 
 //var URLs = newURLStorage()
 
-func New(cfg *config.Config) *URLStorage {
+func NewURLStorage(cfg *config.Config) *URLStorage {
 	u := &URLStorage{
 		List: []*url{},
 		mu:   &sync.Mutex{},

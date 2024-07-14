@@ -16,13 +16,16 @@ import (
 type Handlers struct {
 	cfg   *config.Config
 	store *storage.URLStorage
+	db    *storage.Database
 }
 
 func New(cfg *config.Config, store *storage.URLStorage) *Handlers {
 	h := &Handlers{
 		cfg:   cfg,
 		store: store,
+		db:    storage.NewDatabase(cfg.DatabaseDSN),
 	}
+
 	return h
 }
 
@@ -101,7 +104,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
-	if storage.TestConnection(h.cfg.DatabaseDSN) {
+	if h.db.TestConnection() {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)

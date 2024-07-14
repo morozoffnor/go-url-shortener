@@ -20,7 +20,7 @@ func TestShortURL(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.New(cfg)
+	strg := storage.NewURLStorage(cfg)
 	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
@@ -92,7 +92,7 @@ func TestFullUrl(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.New(cfg)
+	strg := storage.NewURLStorage(cfg)
 	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
@@ -156,7 +156,7 @@ func TestShorten(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.New(cfg)
+	strg := storage.NewURLStorage(cfg)
 	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
