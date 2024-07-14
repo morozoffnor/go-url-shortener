@@ -17,11 +17,10 @@ func TestConnection(ps string) bool {
 	//	`localhost`, `url`, `134562`, `url`, `5433`)
 
 	db, err := sql.Open("pgx", ps)
-	defer db.Close()
 	if err != nil {
 		panic(err)
-
 	}
+	defer db.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
