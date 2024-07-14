@@ -12,10 +12,11 @@ import (
 func newRouter(h *handlers.Handlers) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Log)
+	r.Get("/ping", h.PingHandler)
 	r.Get("/{id}", h.FullURLHandler)
 	r.Post("/", middlewares.Compress(h.ShortURLHandler))
 	r.Post("/api/shorten", middlewares.Compress(h.ShortenHandler))
-	r.Get("/ping/", h.PingHandler)
+
 	return r
 }
 
