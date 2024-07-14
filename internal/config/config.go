@@ -45,7 +45,6 @@ func New() *Config {
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
-		DatabaseDSN:     "host=localhost port=5432 user=url password=134562 dbname=url sslmode=disable",
 	}
 	c.UpdateByOptions(Flags)
 	c.PopulateConfigFromEnv()
