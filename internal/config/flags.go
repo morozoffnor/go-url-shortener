@@ -6,6 +6,7 @@ type ServerConfigFlags struct {
 	ServerAddr      string
 	ResultAddr      string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
 var Flags = NewServerConfigFlags()
@@ -14,6 +15,7 @@ func (scf *ServerConfigFlags) initFlags() {
 	flag.StringVar(&scf.ServerAddr, "a", "localhost:8080", "server address")
 	flag.StringVar(&scf.ResultAddr, "b", "http://localhost:8080", "result base url")
 	flag.StringVar(&scf.FileStoragePath, "f", "/tmp/short-url-db.json", "file storage path")
+	flag.StringVar(&scf.DatabaseDSN, "d", "host=localhost port=5433 user=url password=134562 dbname=url sslmode=disable", "postgres connection string")
 }
 
 func NewServerConfigFlags() *ServerConfigFlags {

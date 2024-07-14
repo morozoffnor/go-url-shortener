@@ -9,20 +9,22 @@ import (
 	"net/http"
 )
 
-func newRouter(cfg *config.Config, s *storage.URLStorage) *chi.Mux {
+func newRouter(h *handlers.Handlers) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Log)
-	r.Get("/{id}", handlers.NewFullURLHandler(cfg, s))
-	r.Post("/", middlewares.Compress(handlers.NewShortURLHandler(cfg, s)))
-	r.Post("/api/shorten", middlewares.Compress(handlers.NewShortenHandler(cfg, s)))
+	r.Get("/{id}", h.FullURLHandler)
+	r.Post("/", middlewares.Compress(h.ShortURLHandler))
+	r.Post("/api/shorten", middlewares.Compress(h.ShortenHandler))
+	r.Get("/ping/", h.PingHandler)
 	return r
 }
 
 func New(cfg *config.Config) *http.Server {
 	strg := storage.New(cfg)
+	h := handlers.New(cfg, strg)
 	s := &http.Server{
 		Addr:    cfg.ServerAddr,
-		Handler: newRouter(cfg, strg),
+		Handler: newRouter(h),
 	}
 	return s
 }

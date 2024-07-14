@@ -10,6 +10,7 @@ type Config struct {
 	ResultAddr      string
 	ServerAddr      string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
 func (c *Config) UpdateByOptions(o *ServerConfigFlags) {
@@ -33,6 +34,10 @@ func (c *Config) PopulateConfigFromEnv() {
 	if fsp != "" {
 		c.FileStoragePath = fsp
 	}
+	ddsn := os.Getenv("DATABASE_DSN")
+	if ddsn != "" {
+		c.DatabaseDSN = ddsn
+	}
 }
 
 func New() *Config {
@@ -40,6 +45,7 @@ func New() *Config {
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
+		DatabaseDSN:     "host=localhost port=5433 user=url password=134562 dbname=url sslmode=disable",
 	}
 	c.UpdateByOptions(Flags)
 	c.PopulateConfigFromEnv()
