@@ -21,6 +21,7 @@ func TestShortURL(t *testing.T) {
 		FileStoragePath: "/tmp/test.json",
 	}
 	strg := storage.New(cfg)
+	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -64,8 +65,8 @@ func TestShortURL(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPost, "/", rBody)
 
 				w := httptest.NewRecorder()
-				shortURL := NewShortURLHandler(cfg, strg)
-				shortURL(w, request)
+
+				h.ShortURLHandler(w, request)
 
 				res := w.Result()
 
@@ -92,6 +93,7 @@ func TestFullUrl(t *testing.T) {
 		FileStoragePath: "/tmp/test.json",
 	}
 	strg := storage.New(cfg)
+	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -135,8 +137,7 @@ func TestFullUrl(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "/"+url, nil)
 			request.SetPathValue("id", url)
 			w := httptest.NewRecorder()
-			fullURL := NewFullURLHandler(cfg, strg)
-			fullURL(w, request)
+			h.FullURLHandler(w, request)
 
 			res := w.Result()
 			defer res.Body.Close()
@@ -156,6 +157,7 @@ func TestShorten(t *testing.T) {
 		FileStoragePath: "/tmp/test.json",
 	}
 	strg := storage.New(cfg)
+	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -207,8 +209,7 @@ func TestShorten(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonReqBody))
 
 				w := httptest.NewRecorder()
-				shorten := NewShortenHandler(cfg, strg)
-				shorten(w, request)
+				h.ShortenHandler(w, request)
 
 				res := w.Result()
 
