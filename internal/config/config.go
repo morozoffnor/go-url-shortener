@@ -18,6 +18,7 @@ func (c *Config) UpdateByOptions(o *ServerConfigFlags) {
 	c.ServerAddr = o.ServerAddr
 	c.ResultAddr = strings.Trim(o.ResultAddr, "/")
 	c.FileStoragePath = o.FileStoragePath
+	c.DatabaseDSN = o.DatabaseDSN
 }
 
 func (c *Config) PopulateConfigFromEnv() {
