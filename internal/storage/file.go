@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
@@ -11,22 +12,14 @@ import (
 	"sync"
 )
 
-type URLStorage struct {
+type FileStorage struct {
 	mu   *sync.Mutex
 	cfg  *config.Config
 	List []*url
 }
 
-type url struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-}
-
-//var URLs = newURLStorage()
-
-func NewURLStorage(cfg *config.Config) *URLStorage {
-	u := &URLStorage{
+func NewFileStorage(cfg *config.Config) *FileStorage {
+	u := &FileStorage{
 		List: []*url{},
 		mu:   &sync.Mutex{},
 		cfg:  cfg,
@@ -38,7 +31,7 @@ func NewURLStorage(cfg *config.Config) *URLStorage {
 	return u
 }
 
-func (s *URLStorage) AddNewURL(full string) (string, error) {
+func (s *FileStorage) AddNewURL(ctx context.Context, full string) (string, error) {
 	if len(full) < 1 {
 		return "", errors.New("blank URL")
 	}
@@ -59,7 +52,7 @@ func (s *URLStorage) AddNewURL(full string) (string, error) {
 	return newURL.ShortURL, nil
 }
 
-func (s *URLStorage) GetFullURL(shortURL string) (string, error) {
+func (s *FileStorage) GetFullURL(ctx context.Context, shortURL string) (string, error) {
 	if len(shortURL) < 1 {
 		return "", errors.New("no short URL provided")
 	}
@@ -71,7 +64,7 @@ func (s *URLStorage) GetFullURL(shortURL string) (string, error) {
 	return "", errors.New("there is no such URL")
 }
 
-func (s *URLStorage) SaveToFile(URLToSave *url) error {
+func (s *FileStorage) SaveToFile(URLToSave *url) error {
 	file, err := os.OpenFile(s.cfg.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		middlewares.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
@@ -88,7 +81,7 @@ func (s *URLStorage) SaveToFile(URLToSave *url) error {
 	return err
 }
 
-func (s *URLStorage) LoadFromFile() error {
+func (s *FileStorage) LoadFromFile() error {
 	file, err := os.OpenFile(s.cfg.FileStoragePath, os.O_RDONLY, 0666)
 	if os.IsNotExist(err) {
 		return nil
@@ -108,4 +101,12 @@ func (s *URLStorage) LoadFromFile() error {
 		s.List = append(s.List, &u)
 	}
 	return nil
+}
+
+func (s *FileStorage) Ping(ctx context.Context) bool {
+	_, err := os.Stat(s.cfg.FileStoragePath)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

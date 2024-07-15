@@ -45,7 +45,7 @@ func New() *Config {
 	c := &Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
-		FileStoragePath: "/tmp/test.json",
+		FileStoragePath: "",
 	}
 	c.UpdateByOptions(Flags)
 	c.PopulateConfigFromEnv()

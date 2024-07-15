@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
@@ -11,19 +12,18 @@ import (
 	"net/http"
 	urlLib "net/url"
 	"strings"
+	"time"
 )
 
 type Handlers struct {
 	cfg   *config.Config
-	store *storage.URLStorage
-	db    *storage.Database
+	store storage.Storage
 }
 
-func New(cfg *config.Config, store *storage.URLStorage) *Handlers {
+func New(cfg *config.Config, store storage.Storage) *Handlers {
 	h := &Handlers{
 		cfg:   cfg,
 		store: store,
-		db:    storage.NewDatabase(cfg.DatabaseDSN),
 	}
 
 	return h
@@ -41,7 +41,11 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
-	url, err := h.store.AddNewURL(decodedBody)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	url, err := h.store.AddNewURL(ctx, decodedBody)
+	defer cancel()
+
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
@@ -57,7 +61,9 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) FullURLHandler(w http.ResponseWriter, r *http.Request) {
-	v, err := h.store.GetFullURL(r.PathValue("id"))
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	v, err := h.store.GetFullURL(ctx, r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
@@ -86,7 +92,9 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid json", http.StatusUnprocessableEntity)
 		return
 	}
-	url, err := h.store.AddNewURL(body.URL)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	url, err := h.store.AddNewURL(ctx, body.URL)
 	//log.Print(storage.URLs.List)
 	if err != nil {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
@@ -104,7 +112,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
-	if h.db.TestConnection() {
+	if h.store.Ping(r.Context()) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
@@ -12,6 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestShortURL(t *testing.T) {
@@ -20,7 +22,7 @@ func TestShortURL(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.NewURLStorage(cfg)
+	strg := storage.NewMemoryStorage(cfg)
 	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
@@ -92,7 +94,7 @@ func TestFullUrl(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.NewURLStorage(cfg)
+	strg := storage.NewMemoryStorage(cfg)
 	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
@@ -129,8 +131,9 @@ func TestFullUrl(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
-			url, _ := strg.AddNewURL("http://test.xyz/")
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			url, _ := strg.AddNewURL(ctx, "http://test.xyz/")
 			if !test.want.checkLocation {
 				url = "DoNotCare"
 			}
@@ -156,7 +159,7 @@ func TestShorten(t *testing.T) {
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.NewURLStorage(cfg)
+	strg := storage.NewMemoryStorage(cfg)
 	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
