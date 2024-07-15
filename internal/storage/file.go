@@ -105,8 +105,5 @@ func (s *FileStorage) LoadFromFile() error {
 
 func (s *FileStorage) Ping(ctx context.Context) bool {
 	_, err := os.Stat(s.cfg.FileStoragePath)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+	return os.IsNotExist(err)
 }
