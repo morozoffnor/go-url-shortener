@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
-	"github.com/morozoffnor/go-url-shortener/pkg/middlewares"
+	"github.com/morozoffnor/go-url-shortener/pkg/logger"
 	"os"
 	"sync"
 )
@@ -26,7 +26,7 @@ func NewFileStorage(cfg *config.Config) *FileStorage {
 	}
 	err := u.LoadFromFile()
 	if err != nil {
-		middlewares.Logger.Error("error loading from file", err)
+		logger.Logger.Error("error loading from file", err)
 	}
 	return u
 }
@@ -67,7 +67,7 @@ func (s *FileStorage) GetFullURL(ctx context.Context, shortURL string) (string, 
 func (s *FileStorage) SaveToFile(URLToSave *url) error {
 	file, err := os.OpenFile(s.cfg.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		middlewares.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
+		logger.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
 		return err
 	}
 	data, err := json.MarshalIndent(&URLToSave, "", "    ")
@@ -87,7 +87,7 @@ func (s *FileStorage) LoadFromFile() error {
 		return nil
 	}
 	if err != nil {
-		middlewares.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
+		logger.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
 		return err
 	}
 	defer file.Close()
