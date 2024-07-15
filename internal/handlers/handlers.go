@@ -118,3 +118,31 @@ func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
+
+func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := pkg.GetBody(r)
+	if err != nil {
+		http.Error(w, "Failed parsing body", http.StatusBadRequest)
+		return
+	}
+	var input []storage.BatchInput
+	err = json.Unmarshal(body, &input)
+	if err != nil {
+		http.Error(w, "Failed decoding body", http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	output, err := h.store.AddBatch(ctx, input)
+	if err != nil {
+		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	resp, err := json.Marshal(output)
+	if err != nil {
+		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
+	}
+	w.Write(resp)
+}

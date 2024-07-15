@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
@@ -67,9 +68,10 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 		return "", err
 	}
 	shortURL := chargen.CreateRandomCharSeq()
+	id := uuid.NewString()
 
 	query := `INSERT INTO urls (id, full_url, short_url) VALUES ($1, $2, $3)`
-	_, err = tx.ExecContext(ctx, query, shortURL, fullURL, shortURL)
+	_, err = tx.ExecContext(ctx, query, id, fullURL, shortURL)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -104,4 +106,50 @@ func (d *Database) getShortURL(ctx context.Context, fullURL string) (string, err
 		return "", err
 	}
 	return shortURL, nil
+}
+
+func (d *Database) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
+	if len(urls) < 1 {
+		return []BatchOutput{}, nil
+	}
+
+	tx, err := d.conn.BeginTx(ctx, nil)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	var result []BatchOutput
+	for _, v := range urls {
+		if short, _ := d.getShortURL(ctx, v.OriginalURL); short != "" {
+			result = append(result, BatchOutput{
+				ShortURL:      short,
+				CorrelationID: v.CorrelationID,
+			})
+			continue
+		}
+		shortURL := chargen.CreateRandomCharSeq()
+		id := uuid.NewString()
+		query := `INSERT INTO urls (id, full_url, short_url) VALUES ($1, $2, $3)`
+		_, err = tx.ExecContext(ctx, query, id, v.OriginalURL, shortURL)
+		if err != nil {
+			log.Print(err)
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Print(rollbackErr)
+				return nil, rollbackErr
+			}
+			return nil, err
+		}
+		result = append(result, BatchOutput{
+			ShortURL:      shortURL,
+			CorrelationID: v.CorrelationID,
+		})
+	}
+	err = tx.Commit()
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return result, nil
+
 }

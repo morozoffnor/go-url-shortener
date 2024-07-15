@@ -59,3 +59,21 @@ func (s *MemoryStorage) GetFullURL(ctx context.Context, shortURL string) (string
 func (s *MemoryStorage) Ping(ctx context.Context) bool {
 	return true
 }
+
+func (s *MemoryStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
+	if len(urls) < 1 {
+		return []BatchOutput{}, nil
+	}
+	var result []BatchOutput
+	for _, v := range urls {
+		shortURL, err2 := s.AddNewURL(ctx, v.OriginalURL)
+		if err2 != nil {
+			return nil, err2
+		}
+		result = append(result, BatchOutput{
+			ShortURL:      shortURL,
+			CorrelationID: v.CorrelationID,
+		})
+	}
+	return result, nil
+}

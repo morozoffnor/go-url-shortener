@@ -107,3 +107,21 @@ func (s *FileStorage) Ping(ctx context.Context) bool {
 	_, err := os.Stat(s.cfg.FileStoragePath)
 	return os.IsNotExist(err)
 }
+
+func (s *FileStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
+	if len(urls) < 1 {
+		return []BatchOutput{}, nil
+	}
+	var result []BatchOutput
+	for _, v := range urls {
+		shortURL, err := s.AddNewURL(ctx, v.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, BatchOutput{
+			ShortURL:      shortURL,
+			CorrelationID: v.CorrelationID,
+		})
+	}
+	return result, nil
+}
