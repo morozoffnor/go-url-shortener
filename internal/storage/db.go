@@ -20,7 +20,9 @@ type Database struct {
 }
 
 func NewDatabase(cfg *config.Config) *Database {
-	db := &Database{}
+	db := &Database{
+		cfg: cfg,
+	}
 	conn, err := sql.Open("pgx", cfg.DatabaseDSN)
 	if err != nil {
 		panic(err)
@@ -122,7 +124,7 @@ func (d *Database) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutp
 	for _, v := range urls {
 		if short, _ := d.getShortURL(ctx, v.OriginalURL); short != "" {
 			result = append(result, BatchOutput{
-				ShortURL:      short,
+				ShortURL:      d.cfg.ResultAddr + "/" + short,
 				CorrelationID: v.CorrelationID,
 			})
 			continue
@@ -141,7 +143,7 @@ func (d *Database) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutp
 			return nil, err
 		}
 		result = append(result, BatchOutput{
-			ShortURL:      shortURL,
+			ShortURL:      d.cfg.ResultAddr + "/" + shortURL,
 			CorrelationID: v.CorrelationID,
 		})
 	}
