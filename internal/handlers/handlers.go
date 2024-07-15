@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
-	"github.com/morozoffnor/go-url-shortener/pkg"
+	"github.com/morozoffnor/go-url-shortener/pkg/body"
 	"log"
 	"net/http"
 	urlLib "net/url"
@@ -30,7 +30,7 @@ func New(cfg *config.Config, store storage.Storage) *Handlers {
 }
 
 func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := pkg.GetBody(r)
+	body, err := body.GetBody(r)
 	if err != nil {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
 		return
@@ -107,6 +107,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := json.Marshal(short)
 	if err != nil {
 		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
+		return
 	}
 	w.Write(resp)
 }
@@ -120,7 +121,7 @@ func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := pkg.GetBody(r)
+	body, err := body.GetBody(r)
 	if err != nil {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
 		return

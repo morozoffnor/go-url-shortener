@@ -55,7 +55,8 @@ func (d *Database) createTable(ctx context.Context) error {
     	id varchar(255) PRIMARY KEY,
     	full_url varchar(500) UNIQUE NOT NULL,
     	short_url varchar(255) UNIQUE NOT NULL
-	)`
+	);
+		CREATE INDEX IF NOT EXISTS urls_full_url_idx ON urls(full_url);`
 
 	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
