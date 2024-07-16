@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"github.com/morozoffnor/go-url-shortener/pkg/logger"
-	_ "github.com/morozoffnor/go-url-shortener/pkg/logger"
 	"net/http"
 	"time"
 )

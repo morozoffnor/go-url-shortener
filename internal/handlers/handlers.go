@@ -55,7 +55,8 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 			//http.Error(w, h.cfg.ResultAddr+"/"+url, http.StatusConflict)
 			w.Header().Set("Content-Type", "text/plain, utf-8")
 			w.WriteHeader(http.StatusConflict)
-			_, err = fmt.Fprint(w, h.cfg.ResultAddr+"/"+url)
+			// просто Fprint подставляет /n в конце строки, автотесты ругаются
+			_, err = fmt.Fprintf(w, "%s", h.cfg.ResultAddr+"/"+url)
 			return
 		}
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
@@ -79,7 +80,6 @@ func (h *Handlers) FullURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, v, http.StatusTemporaryRedirect)
-	log.Print(w.Header().Get("location"))
 }
 
 func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
