@@ -21,8 +21,7 @@ func newRouter(h *handlers.Handlers) *chi.Mux {
 	return r
 }
 
-func New(cfg *config.Config) *http.Server {
-	strg := storage.NewStorage(cfg)
+func New(cfg *config.Config, strg storage.Storage) *http.Server {
 	h := handlers.New(cfg, strg)
 	s := &http.Server{
 		Addr:    cfg.ServerAddr,

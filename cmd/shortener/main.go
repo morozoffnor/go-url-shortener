@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/server"
+	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
@@ -13,7 +14,8 @@ import (
 
 func main() {
 	cfg := config.New()
-	s := server.New(cfg)
+	strg := storage.NewStorage(cfg)
+	s := server.New(cfg, strg)
 
 	// Создаём бесконечный контекст
 	ctx, cancel := context.WithCancel(context.Background())
