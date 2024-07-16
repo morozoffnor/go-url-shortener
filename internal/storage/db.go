@@ -78,7 +78,8 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			log.Print("URL already exists")
-			return "", err
+			short, _ := d.getShortURL(ctx, fullURL)
+			return short, pgErr
 		}
 		return "", err
 	}

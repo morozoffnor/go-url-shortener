@@ -50,8 +50,9 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		var pgErr *pgconn.PgError
+		// возвращаем 409 если такой URL уже есть в бд
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			http.Error(w, "URL already exists", http.StatusConflict)
+			http.Error(w, h.cfg.ResultAddr+"/"+url, http.StatusConflict)
 			return
 		}
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
@@ -59,7 +60,6 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain, utf-8")
 	w.WriteHeader(http.StatusCreated)
-	//log.Print(storage.URLs.List)
 	_, err = fmt.Fprint(w, h.cfg.ResultAddr+"/"+url)
 	if err != nil {
 		log.Print("error while writing response")
@@ -86,34 +86,41 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	type resBody struct {
 		Result string `json:"result"`
 	}
+	w.Header().Set("Content-Type", "application/json")
 	var raw bytes.Buffer
 	if _, err := raw.ReadFrom(r.Body); err != nil {
 		http.Error(w, "Invalid body", http.StatusUnprocessableEntity)
 		return
 	}
 
-	body := &reqBody{}
-	err := json.Unmarshal(raw.Bytes(), body)
-	//log.Print(body)
+	rbody := &reqBody{}
+	err := json.Unmarshal(raw.Bytes(), rbody)
 	if err != nil {
 		http.Error(w, "Invalid json", http.StatusUnprocessableEntity)
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	url, err := h.store.AddNewURL(ctx, body.URL)
-	//log.Print(storage.URLs.List)
+	url, err := h.store.AddNewURL(ctx, rbody.URL)
+
 	if err != nil {
 		var pgErr *pgconn.PgError
+		// возвращаем 409 если такой URL уже есть в бд
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			http.Error(w, "URL already exists", http.StatusConflict)
+			short := &resBody{Result: h.cfg.ResultAddr + "/" + url}
+			resp, err := json.Marshal(short)
+			if err != nil {
+				http.Error(w, "Fail during serializing", http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusConflict)
+			w.Write(resp)
 			return
 		}
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	short := &resBody{Result: h.cfg.ResultAddr + "/" + url}
 	resp, err := json.Marshal(short)
@@ -140,6 +147,7 @@ func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var input []storage.BatchInput
 	err = json.Unmarshal(body, &input)
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		http.Error(w, "Failed decoding body", http.StatusBadRequest)
 		return
@@ -151,7 +159,7 @@ func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(http.StatusCreated)
 	resp, err := json.Marshal(output)
 	if err != nil {
