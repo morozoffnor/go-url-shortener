@@ -52,7 +52,10 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 		var pgErr *pgconn.PgError
 		// возвращаем 409 если такой URL уже есть в бд
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			http.Error(w, h.cfg.ResultAddr+"/"+url, http.StatusConflict)
+			//http.Error(w, h.cfg.ResultAddr+"/"+url, http.StatusConflict)
+			w.Header().Set("Content-Type", "text/plain, utf-8")
+			w.WriteHeader(http.StatusConflict)
+			_, err = fmt.Fprint(w, h.cfg.ResultAddr+"/"+url)
 			return
 		}
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
