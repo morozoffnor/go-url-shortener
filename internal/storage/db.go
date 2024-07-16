@@ -55,8 +55,7 @@ func (d *Database) createTable(ctx context.Context) error {
     	id varchar(255) PRIMARY KEY,
     	full_url varchar(500) UNIQUE NOT NULL,
     	short_url varchar(255) UNIQUE NOT NULL
-	);
-		CREATE INDEX IF NOT EXISTS urls_full_url_idx ON urls(full_url);`
+	);`
 
 	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
@@ -79,7 +78,7 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			log.Print("URL already exists")
-			return d.getShortURL(ctx, fullURL)
+			return "", err
 		}
 		return "", err
 	}

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/morozoffnor/go-url-shortener/pkg/body"
@@ -47,6 +49,11 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			http.Error(w, "URL already exists", http.StatusConflict)
+			return
+		}
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
 	}
@@ -97,6 +104,11 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	url, err := h.store.AddNewURL(ctx, body.URL)
 	//log.Print(storage.URLs.List)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			http.Error(w, "URL already exists", http.StatusConflict)
+			return
+		}
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
 	}
