@@ -28,6 +28,8 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	if err != nil {
 		panic(err)
 	}
+	conn.Config().MaxConns = 20
+	conn.Config().MinConns = 2
 	//conn, err := sql.Open("pgx", cfg.DatabaseDSN)
 	//if err != nil {
 	//	panic(err)
@@ -84,6 +86,7 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			log.Print("URL already exists")
 			short, _ := d.getShortURL(ctx, fullURL)
+			_ = tx.Commit(ctx)
 			return short, pgErr
 		}
 		return "", err
