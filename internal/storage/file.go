@@ -103,11 +103,6 @@ func (s *FileStorage) LoadFromFile() error {
 	return nil
 }
 
-func (s *FileStorage) Ping(ctx context.Context) bool {
-	_, err := os.Stat(s.cfg.FileStoragePath)
-	return os.IsNotExist(err)
-}
-
 func (s *FileStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
 	if len(urls) < 1 {
 		return []BatchOutput{}, nil

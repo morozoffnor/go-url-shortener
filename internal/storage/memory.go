@@ -56,10 +56,6 @@ func (s *MemoryStorage) GetFullURL(ctx context.Context, shortURL string) (string
 	return "", errors.New("there is no such URL")
 }
 
-func (s *MemoryStorage) Ping(ctx context.Context) bool {
-	return true
-}
-
 func (s *MemoryStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
 	if len(urls) < 1 {
 		return []BatchOutput{}, nil

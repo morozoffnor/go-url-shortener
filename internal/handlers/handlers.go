@@ -13,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	urlLib "net/url"
-	"strings"
 	"time"
 )
 
@@ -42,7 +41,6 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed decoding body", http.StatusBadRequest)
 		return
 	}
-	decodedBody, _ = strings.CutPrefix(decodedBody, "url=")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	url, err := h.store.AddNewURL(ctx, decodedBody)
@@ -138,11 +136,17 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
-	if h.store.Ping(r.Context()) {
-		w.WriteHeader(http.StatusOK)
+	v, ok := interface{}(h.store).(storage.Pingable)
+	if ok {
+		if v.Ping(r.Context()) {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusOK)
 	}
+
 }
 
 func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {

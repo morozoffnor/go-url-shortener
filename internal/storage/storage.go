@@ -27,14 +27,17 @@ type BatchOutput struct {
 type Storage interface {
 	AddNewURL(ctx context.Context, full string) (string, error)
 	GetFullURL(ctx context.Context, shortURL string) (string, error)
-	Ping(ctx context.Context) bool
 	AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error)
 }
 
-func NewStorage(cfg *config.Config) Storage {
+type Pingable interface {
+	Ping(ctx context.Context) bool
+}
+
+func NewStorage(cfg *config.Config, ctx context.Context) Storage {
 	if cfg.DatabaseDSN != "" {
 		log.Print("Using database storage")
-		return NewDatabase(cfg)
+		return NewDatabase(cfg, ctx)
 	}
 	if cfg.FileStoragePath != "" {
 		log.Print("Using file storage")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
+	"github.com/morozoffnor/go-url-shortener/internal/handlers"
 	"github.com/morozoffnor/go-url-shortener/internal/server"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"golang.org/x/sync/errgroup"
@@ -13,12 +14,12 @@ import (
 )
 
 func main() {
-	cfg := config.New()
-	strg := storage.NewStorage(cfg)
-	s := server.New(cfg, strg)
-
 	// Создаём бесконечный контекст
 	ctx, cancel := context.WithCancel(context.Background())
+	cfg := config.New()
+	strg := storage.NewStorage(cfg, ctx)
+	h := handlers.New(cfg, strg)
+	s := server.New(cfg, strg, h)
 	// ожидаем завершение в горутине, отправляем в канал
 	go func() {
 		c := make(chan os.Signal, 1)
