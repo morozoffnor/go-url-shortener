@@ -1,44 +1,37 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
-	"github.com/morozoffnor/go-url-shortener/pkg/middlewares"
+	"github.com/morozoffnor/go-url-shortener/pkg/logger"
 	"os"
 	"sync"
 )
 
-type URLStorage struct {
+type FileStorage struct {
 	mu   *sync.Mutex
-	cfg  *config.ServerConfig
+	cfg  *config.Config
 	List []*url
 }
 
-type url struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-}
-
-//var URLs = newURLStorage()
-
-func New(cfg *config.ServerConfig) *URLStorage {
-	u := &URLStorage{
+func NewFileStorage(cfg *config.Config) *FileStorage {
+	u := &FileStorage{
 		List: []*url{},
 		mu:   &sync.Mutex{},
 		cfg:  cfg,
 	}
 	err := u.LoadFromFile()
 	if err != nil {
-		middlewares.Logger.Error("error loading from file", err)
+		logger.Logger.Error("error loading from file", err)
 	}
 	return u
 }
 
-func (s *URLStorage) AddNewURL(full string) (string, error) {
+func (s *FileStorage) AddNewURL(ctx context.Context, full string) (string, error) {
 	if len(full) < 1 {
 		return "", errors.New("blank URL")
 	}
@@ -59,7 +52,7 @@ func (s *URLStorage) AddNewURL(full string) (string, error) {
 	return newURL.ShortURL, nil
 }
 
-func (s *URLStorage) GetFullURL(shortURL string) (string, error) {
+func (s *FileStorage) GetFullURL(ctx context.Context, shortURL string) (string, error) {
 	if len(shortURL) < 1 {
 		return "", errors.New("no short URL provided")
 	}
@@ -71,10 +64,10 @@ func (s *URLStorage) GetFullURL(shortURL string) (string, error) {
 	return "", errors.New("there is no such URL")
 }
 
-func (s *URLStorage) SaveToFile(URLToSave *url) error {
+func (s *FileStorage) SaveToFile(URLToSave *url) error {
 	file, err := os.OpenFile(s.cfg.FileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		middlewares.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
+		logger.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
 		return err
 	}
 	data, err := json.MarshalIndent(&URLToSave, "", "    ")
@@ -88,13 +81,13 @@ func (s *URLStorage) SaveToFile(URLToSave *url) error {
 	return err
 }
 
-func (s *URLStorage) LoadFromFile() error {
+func (s *FileStorage) LoadFromFile() error {
 	file, err := os.OpenFile(s.cfg.FileStoragePath, os.O_RDONLY, 0666)
 	if os.IsNotExist(err) {
 		return nil
 	}
 	if err != nil {
-		middlewares.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
+		logger.Logger.Error("error opening file "+s.cfg.FileStoragePath, err)
 		return err
 	}
 	defer file.Close()
@@ -108,4 +101,22 @@ func (s *URLStorage) LoadFromFile() error {
 		s.List = append(s.List, &u)
 	}
 	return nil
+}
+
+func (s *FileStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
+	if len(urls) < 1 {
+		return []BatchOutput{}, nil
+	}
+	var result []BatchOutput
+	for _, v := range urls {
+		shortURL, err := s.AddNewURL(ctx, v.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, BatchOutput{
+			ShortURL:      shortURL,
+			CorrelationID: v.CorrelationID,
+		})
+	}
+	return result, nil
 }

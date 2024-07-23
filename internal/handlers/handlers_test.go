@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
@@ -12,15 +13,17 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestShortURL(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.New(cfg)
+	strg := storage.NewMemoryStorage(cfg)
+	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -64,8 +67,8 @@ func TestShortURL(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPost, "/", rBody)
 
 				w := httptest.NewRecorder()
-				shortURL := NewShortURLHandler(cfg, strg)
-				shortURL(w, request)
+
+				h.ShortURLHandler(w, request)
 
 				res := w.Result()
 
@@ -86,12 +89,13 @@ func TestShortURL(t *testing.T) {
 }
 
 func TestFullUrl(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.New(cfg)
+	strg := storage.NewMemoryStorage(cfg)
+	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -127,16 +131,16 @@ func TestFullUrl(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
-			url, _ := strg.AddNewURL("http://test.xyz/")
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			url, _ := strg.AddNewURL(ctx, "http://test.xyz/")
 			if !test.want.checkLocation {
 				url = "DoNotCare"
 			}
 			request := httptest.NewRequest(http.MethodGet, "/"+url, nil)
 			request.SetPathValue("id", url)
 			w := httptest.NewRecorder()
-			fullURL := NewFullURLHandler(cfg, strg)
-			fullURL(w, request)
+			h.FullURLHandler(w, request)
 
 			res := w.Result()
 			defer res.Body.Close()
@@ -150,12 +154,13 @@ func TestFullUrl(t *testing.T) {
 }
 
 func TestShorten(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := storage.New(cfg)
+	strg := storage.NewMemoryStorage(cfg)
+	h := New(cfg, strg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -207,8 +212,7 @@ func TestShorten(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonReqBody))
 
 				w := httptest.NewRecorder()
-				shorten := NewShortenHandler(cfg, strg)
-				shorten(w, request)
+				h.ShortenHandler(w, request)
 
 				res := w.Result()
 

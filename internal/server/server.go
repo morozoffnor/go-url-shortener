@@ -9,26 +9,22 @@ import (
 	"net/http"
 )
 
-func newRouter(cfg *config.ServerConfig, s *storage.URLStorage) *chi.Mux {
+func newRouter(h *handlers.Handlers) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.Log)
-	r.Get("/{id}", handlers.NewFullURLHandler(cfg, s))
-	r.Post("/", middlewares.Compress(handlers.NewShortURLHandler(cfg, s)))
-	r.Post("/api/shorten", middlewares.Compress(handlers.NewShortenHandler(cfg, s)))
+	r.Get("/ping", h.PingHandler)
+	r.Get("/{id}", h.FullURLHandler)
+	r.Post("/", middlewares.Compress(h.ShortURLHandler))
+	r.Post("/api/shorten/batch", middlewares.Compress(h.BatchHandler))
+	r.Post("/api/shorten", middlewares.Compress(h.ShortenHandler))
+
 	return r
 }
 
-func New(cfg *config.ServerConfig) *http.Server {
-	strg := storage.New(cfg)
+func New(cfg *config.Config, strg storage.Storage, h *handlers.Handlers) *http.Server {
 	s := &http.Server{
 		Addr:    cfg.ServerAddr,
-		Handler: newRouter(cfg, strg),
+		Handler: newRouter(h),
 	}
 	return s
 }
-
-//func RunServer(cfg *config.ServerConfig) error {
-//	s := New(cfg)
-//	log.Print("The server is listening on " + cfg.ServerAddr)
-//	return http.ListenAndServe(cfg.ServerAddr, r)
-//}

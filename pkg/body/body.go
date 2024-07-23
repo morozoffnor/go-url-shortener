@@ -1,4 +1,4 @@
-package pkg
+package body
 
 import (
 	"compress/gzip"

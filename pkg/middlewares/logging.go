@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"go.uber.org/zap"
+	"github.com/morozoffnor/go-url-shortener/pkg/logger"
 	"net/http"
 	"time"
 )
@@ -29,20 +29,9 @@ func (r *ResponseWriterWithLog) WriteHeader(statusCode int) {
 	r.ResponseData.Status = statusCode
 }
 
-var Logger = NewLogger()
-
-func NewLogger() *zap.SugaredLogger {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-	sugar := logger.Sugar()
-	return sugar
-}
-
 func Log(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer Logger.Sync()
+		defer logger.Logger.Sync()
 
 		start := time.Now()
 
@@ -56,7 +45,7 @@ func Log(next http.Handler) http.Handler {
 
 		duration := time.Since(start)
 
-		Logger.Infoln(
+		logger.Logger.Infoln(
 			"uri", r.RequestURI,
 			"method", r.Method,
 			"status", respData.Status,

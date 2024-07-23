@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
+	"github.com/morozoffnor/go-url-shortener/internal/handlers"
 	"github.com/morozoffnor/go-url-shortener/internal/server"
+	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"golang.org/x/sync/errgroup"
 	"os"
 	"os/signal"
@@ -13,12 +14,12 @@ import (
 )
 
 func main() {
-	flag.Parse()
-	cfg := config.New()
-	s := server.New(cfg)
-
 	// Создаём бесконечный контекст
 	ctx, cancel := context.WithCancel(context.Background())
+	cfg := config.New()
+	strg := storage.NewStorage(cfg, ctx)
+	h := handlers.New(cfg, strg)
+	s := server.New(cfg, strg, h)
 	// ожидаем завершение в горутине, отправляем в канал
 	go func() {
 		c := make(chan os.Signal, 1)

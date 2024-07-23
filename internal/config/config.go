@@ -1,43 +1,51 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"strings"
 )
 
-type ServerConfig struct {
+type Config struct {
 	ResultAddr      string
 	ServerAddr      string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
-func (config *ServerConfig) UpdateByOptions(o *ServerConfigFlags) {
-	config.ServerAddr = o.ServerAddr
-	config.ResultAddr = strings.Trim(o.ResultAddr, "/")
-	config.FileStoragePath = o.FileStoragePath
+func (c *Config) UpdateByOptions(o *ServerConfigFlags) {
+	flag.Parse()
+	c.ServerAddr = o.ServerAddr
+	c.ResultAddr = strings.Trim(o.ResultAddr, "/")
+	c.FileStoragePath = o.FileStoragePath
+	c.DatabaseDSN = o.DatabaseDSN
 }
 
-func (config *ServerConfig) PopulateConfigFromEnv() {
+func (c *Config) PopulateConfigFromEnv() {
 
 	sa := os.Getenv("SERVER_ADDRESS")
 	if sa != "" {
-		config.ServerAddr = sa
+		c.ServerAddr = sa
 	}
 	ra := os.Getenv("BASE_URL")
 	if ra != "" {
-		config.ResultAddr = ra
+		c.ResultAddr = ra
 	}
 	fsp := os.Getenv("FILE_STORAGE_PATH")
 	if fsp != "" {
-		config.FileStoragePath = fsp
+		c.FileStoragePath = fsp
+	}
+	ddsn := os.Getenv("DATABASE_DSN")
+	if ddsn != "" {
+		c.DatabaseDSN = ddsn
 	}
 }
 
-func New() *ServerConfig {
-	c := &ServerConfig{
+func New() *Config {
+	c := &Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
-		FileStoragePath: "/tmp/test.json",
+		FileStoragePath: "",
 	}
 	c.UpdateByOptions(Flags)
 	c.PopulateConfigFromEnv()

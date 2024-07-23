@@ -1,21 +1,23 @@
 package storage
 
 import (
+	"context"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"log"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestUrlStorage_addNewUrl(t *testing.T) {
-	cfg := &config.ServerConfig{
+	cfg := &config.Config{
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "/tmp/test.json",
 	}
-	strg := New(cfg)
+	strg := NewMemoryStorage(cfg)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -44,7 +46,9 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			for _, full := range test.urls {
-				result, err := strg.AddNewURL(full)
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				result, err := strg.AddNewURL(ctx, full)
+				defer cancel()
 				require.NoError(t, err)
 				assert.IsType(t, "", result)
 				log.Print(result)
@@ -83,18 +87,20 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := &config.ServerConfig{
+			cfg := &config.Config{
 				ServerAddr:      ":8080",
 				ResultAddr:      "http://localhost:8080",
 				FileStoragePath: "/tmp/test.json",
 			}
-			strg := New(cfg)
+			strg := NewMemoryStorage(cfg)
 			tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 			require.Nil(t, err)
 			defer tmpFile.Close()
 
-			shortURL, _ := strg.AddNewURL(test.URLs[0].OriginalURL)
-			full, err := strg.GetFullURL(shortURL)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			shortURL, _ := strg.AddNewURL(ctx, test.URLs[0].OriginalURL)
+			full, err := strg.GetFullURL(ctx, shortURL)
+			defer cancel()
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)
 			} else {
