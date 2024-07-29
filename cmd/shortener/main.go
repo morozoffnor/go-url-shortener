@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/handlers"
 	"github.com/morozoffnor/go-url-shortener/internal/server"
@@ -18,8 +19,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cfg := config.New()
 	strg := storage.NewStorage(cfg, ctx)
-	h := handlers.New(cfg, strg)
-	s := server.New(cfg, strg, h)
+	authHelper := auth.New(cfg)
+	h := handlers.New(cfg, strg, authHelper)
+	s := server.New(cfg, h)
 	// ожидаем завершение в горутине, отправляем в канал
 	go func() {
 		c := make(chan os.Signal, 1)

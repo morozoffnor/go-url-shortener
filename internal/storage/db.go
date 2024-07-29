@@ -3,6 +3,9 @@ package storage
 import (
 	"context"
 	"errors"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -30,17 +33,26 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	}
 	conn.Config().MaxConns = 20
 	conn.Config().MinConns = 2
-	//conn, err := sql.Open("pgx", cfg.DatabaseDSN)
-	//if err != nil {
-	//	panic(err)
-	//}
 	db.conn = conn
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err = db.createTable(ctx); err != nil {
+	//if err = db.createTable(ctx); err != nil {
+	//	panic(err)
+	//}
+	doMigrations(cfg)
+	return db
+}
+
+func doMigrations(cfg *config.Config) {
+	m, err := migrate.New("file://../../internal/storage/migrations", cfg.DatabaseDSN)
+
+	if err != nil {
 		panic(err)
 	}
-	return db
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		panic(err)
+	}
 }
 
 func (d *Database) Ping(ctx context.Context) bool {
@@ -52,24 +64,25 @@ func (d *Database) Ping(ctx context.Context) bool {
 	return true
 }
 
-func (d *Database) createTable(ctx context.Context) error {
-	tx, err := d.conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	query := `CREATE TABLE IF NOT EXISTS "urls"(
-    	id varchar(255) PRIMARY KEY,
-    	full_url varchar(500) UNIQUE NOT NULL,
-    	short_url varchar(255) UNIQUE NOT NULL
-	);`
-
-	_, err = tx.Exec(ctx, query)
-	if err != nil {
-		return err
-	}
-	return tx.Commit(ctx)
-}
+// Оставлю тут на случай, если автотесты будут ругаться на создание таблицы
+//func (d *Database) createTable(ctx context.Context) error {
+//	tx, err := d.conn.Begin(ctx)
+//	if err != nil {
+//		return err
+//	}
+//
+//	query := `CREATE TABLE IF NOT EXISTS "urls"(
+//    	id varchar(255) PRIMARY KEY,
+//    	full_url varchar(500) UNIQUE NOT NULL,
+//    	short_url varchar(255) UNIQUE NOT NULL
+//	);`
+//
+//	_, err = tx.Exec(ctx, query)
+//	if err != nil {
+//		return err
+//	}
+//	return tx.Commit(ctx)
+//}
 
 func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error) {
 	tx, err := d.conn.Begin(ctx)
@@ -79,8 +92,8 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 	shortURL := chargen.CreateRandomCharSeq()
 	id := uuid.NewString()
 
-	query := `INSERT INTO urls (id, full_url, short_url) VALUES ($1, $2, $3)`
-	_, err = tx.Exec(ctx, query, id, fullURL, shortURL)
+	query := `INSERT INTO urls (id, full_url, short_url, user_id) VALUES ($1, $2, $3, $4)`
+	_, err = tx.Exec(ctx, query, id, fullURL, shortURL, ctx.Value("user_id"))
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -137,7 +150,7 @@ func (d *Database) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutp
 		shortURL := chargen.CreateRandomCharSeq()
 		id := uuid.NewString()
 
-		batch.Queue("INSERT INTO urls (id, full_url, short_url) VALUES ($1, $2, $3)", id, v.OriginalURL, shortURL)
+		batch.Queue("INSERT INTO urls (id, full_url, short_url, user_id) VALUES ($1, $2, $3, $4)", id, v.OriginalURL, shortURL, ctx.Value("user_id"))
 
 		result = append(result, BatchOutput{
 			ShortURL:      d.cfg.ResultAddr + "/" + shortURL,
@@ -148,4 +161,34 @@ func (d *Database) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutp
 	defer br.Close()
 	return result, nil
 
+}
+
+func (d *Database) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]UserURLs, error) {
+	if len(userID) == 0 {
+		return nil, nil
+	}
+
+	var result []UserURLs
+	rows, err := d.conn.Query(ctx, "SELECT short_url, full_url FROM urls WHERE user_id = $1", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var row UserURLs
+		err := rows.Scan(&row.ShortURL, &row.OriginalURL)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, row)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
 }

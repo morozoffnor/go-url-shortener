@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
+	authHelper "github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/morozoffnor/go-url-shortener/pkg/body"
@@ -17,20 +19,30 @@ import (
 )
 
 type Handlers struct {
-	cfg   *config.Config
+	Cfg   *config.Config
 	store storage.Storage
+	auth  *authHelper.JWT
 }
 
-func New(cfg *config.Config, store storage.Storage) *Handlers {
+func New(cfg *config.Config, store storage.Storage, authHelper *authHelper.JWT) *Handlers {
 	h := &Handlers{
-		cfg:   cfg,
+		Cfg:   cfg,
 		store: store,
+		auth:  authHelper,
 	}
 
 	return h
 }
 
 func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.auth.CheckToken(r) {
+		ctx, err := h.auth.AddTokenToCookies(&w, r)
+		if err != nil {
+			http.Error(w, "Error creating token", http.StatusBadRequest)
+			return
+		}
+		r = r.WithContext(ctx)
+	}
 	body, err := body.GetBody(r)
 	if err != nil {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
@@ -53,7 +65,7 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/plain, utf-8")
 			w.WriteHeader(http.StatusConflict)
 			// просто Fprint подставляет /n в конце строки, автотесты ругаются
-			_, err = fmt.Fprintf(w, "%s", h.cfg.ResultAddr+"/"+url)
+			_, err = fmt.Fprintf(w, "%s", h.Cfg.ResultAddr+"/"+url)
 			if err != nil {
 				log.Print("error while writing response")
 				return
@@ -65,7 +77,7 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain, utf-8")
 	w.WriteHeader(http.StatusCreated)
-	_, err = fmt.Fprint(w, h.cfg.ResultAddr+"/"+url)
+	_, err = fmt.Fprint(w, h.Cfg.ResultAddr+"/"+url)
 	if err != nil {
 		log.Print("error while writing response")
 		return
@@ -90,6 +102,16 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	type resBody struct {
 		Result string `json:"result"`
 	}
+
+	if !h.auth.CheckToken(r) {
+		ctx, err := h.auth.AddTokenToCookies(&w, r)
+		if err != nil {
+			http.Error(w, "Error creating token", http.StatusBadRequest)
+			return
+		}
+		r = r.WithContext(ctx)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	var raw bytes.Buffer
 	if _, err := raw.ReadFrom(r.Body); err != nil {
@@ -111,7 +133,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 		var pgErr *pgconn.PgError
 		// возвращаем 409 если такой URL уже есть в бд
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			short := &resBody{Result: h.cfg.ResultAddr + "/" + url}
+			short := &resBody{Result: h.Cfg.ResultAddr + "/" + url}
 			resp, err := json.Marshal(short)
 			if err != nil {
 				http.Error(w, "Fail during serializing", http.StatusInternalServerError)
@@ -126,7 +148,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	short := &resBody{Result: h.cfg.ResultAddr + "/" + url}
+	short := &resBody{Result: h.Cfg.ResultAddr + "/" + url}
 	resp, err := json.Marshal(short)
 	if err != nil {
 		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
@@ -150,6 +172,14 @@ func (h *Handlers) PingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
+	if !h.auth.CheckToken(r) {
+		ctx, err := h.auth.AddTokenToCookies(&w, r)
+		if err != nil {
+			http.Error(w, "Error creating token", http.StatusBadRequest)
+			return
+		}
+		r = r.WithContext(ctx)
+	}
 	body, err := body.GetBody(r)
 	if err != nil {
 		http.Error(w, "Failed parsing body", http.StatusBadRequest)
@@ -175,5 +205,35 @@ func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
 	}
+	w.Write(resp)
+}
+
+func (h *Handlers) GetUserURLsHandler(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	v, err := h.store.GetUserURLs(ctx, userID)
+	if err != nil {
+		http.Error(w, "Error", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if v == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	resp, err := json.Marshal(v)
+	log.Print(v)
+	if err != nil {
+		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
