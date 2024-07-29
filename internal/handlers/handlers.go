@@ -210,7 +210,7 @@ func (h *Handlers) BatchHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) GetUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 
-	userID, ok := r.Context().Value("user_id").(uuid.UUID)
+	userID, ok := r.Context().Value(authHelper.ContextUserID).(uuid.UUID)
 
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
