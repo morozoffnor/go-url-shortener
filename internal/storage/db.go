@@ -182,6 +182,7 @@ func (d *Database) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]UserURL
 		if err != nil {
 			return nil, err
 		}
+		row.ShortURL = d.cfg.ResultAddr + "/" + row.ShortURL
 
 		result = append(result, row)
 	}

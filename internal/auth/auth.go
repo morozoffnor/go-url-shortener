@@ -12,7 +12,7 @@ import (
 
 type ContextUserIDKey string
 
-var ContextUserID = "user_id"
+var ContextUserID ContextUserIDKey = "user_id"
 
 type JWT struct {
 	config *config.Config

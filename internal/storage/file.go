@@ -129,7 +129,7 @@ func (s *FileStorage) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]User
 	for _, v := range s.List {
 		if v.UserID == userID.String() {
 			var u UserURLs
-			u.ShortURL = v.ShortURL
+			u.ShortURL = s.cfg.ResultAddr + "/" + v.ShortURL
 			u.OriginalURL = v.OriginalURL
 
 			result = append(result, u)
