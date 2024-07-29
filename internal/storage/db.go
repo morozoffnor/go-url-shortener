@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
@@ -36,21 +35,25 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	db.conn = conn
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	doMigrations(cfg)
-	return db
-}
-
-func doMigrations(cfg *config.Config) {
-	m, err := migrate.New("file://../../internal/storage/migrations", cfg.DatabaseDSN)
-
+	//doMigrations(cfg)
+	err = db.createTable(ctx)
 	if err != nil {
 		panic(err)
 	}
-	err = m.Up()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		panic(err)
-	}
+	return db
 }
+
+//func doMigrations(cfg *config.Config) {
+//	m, err := migrate.New("file://../../internal/storage/migrations", cfg.DatabaseDSN)
+//
+//	if err != nil {
+//		panic(err)
+//	}
+//	err = m.Up()
+//	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+//		panic(err)
+//	}
+//}
 
 func (d *Database) Ping(ctx context.Context) bool {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
@@ -62,24 +65,25 @@ func (d *Database) Ping(ctx context.Context) bool {
 }
 
 // Оставлю тут на случай, если автотесты будут ругаться на создание таблицы
-//func (d *Database) createTable(ctx context.Context) error {
-//	tx, err := d.conn.Begin(ctx)
-//	if err != nil {
-//		return err
-//	}
-//
-//	query := `CREATE TABLE IF NOT EXISTS "urls"(
-//    	id varchar(255) PRIMARY KEY,
-//    	full_url varchar(500) UNIQUE NOT NULL,
-//    	short_url varchar(255) UNIQUE NOT NULL
-//	);`
-//
-//	_, err = tx.Exec(ctx, query)
-//	if err != nil {
-//		return err
-//	}
-//	return tx.Commit(ctx)
-//}
+func (d *Database) createTable(ctx context.Context) error {
+	tx, err := d.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	query := `CREATE TABLE IF NOT EXISTS "urls"(
+   	id varchar(255) PRIMARY KEY,
+   	full_url varchar(500) UNIQUE NOT NULL,
+   	short_url varchar(255) UNIQUE NOT NULL,
+    user_id varchar(255) NOT NULL
+	);`
+
+	_, err = tx.Exec(ctx, query)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
 
 func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error) {
 	tx, err := d.conn.Begin(ctx)

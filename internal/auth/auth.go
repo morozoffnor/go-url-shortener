@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+type ContextUserIDKey string
+
 var ContextUserID = "user_id"
 
 type JWT struct {
