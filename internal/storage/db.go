@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
 	"log"
@@ -94,7 +95,7 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 	id := uuid.NewString()
 
 	query := `INSERT INTO urls (id, full_url, short_url, user_id) VALUES ($1, $2, $3, $4)`
-	_, err = tx.Exec(ctx, query, id, fullURL, shortURL, ctx.Value("user_id"))
+	_, err = tx.Exec(ctx, query, id, fullURL, shortURL, ctx.Value(auth.ContextUserID))
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -151,7 +152,7 @@ func (d *Database) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutp
 		shortURL := chargen.CreateRandomCharSeq()
 		id := uuid.NewString()
 
-		batch.Queue("INSERT INTO urls (id, full_url, short_url, user_id) VALUES ($1, $2, $3, $4)", id, v.OriginalURL, shortURL, ctx.Value("user_id"))
+		batch.Queue("INSERT INTO urls (id, full_url, short_url, user_id) VALUES ($1, $2, $3, $4)", id, v.OriginalURL, shortURL, ctx.Value(auth.ContextUserID))
 
 		result = append(result, BatchOutput{
 			ShortURL:      d.cfg.ResultAddr + "/" + shortURL,
