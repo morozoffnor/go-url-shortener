@@ -120,3 +120,21 @@ func (s *FileStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchO
 	}
 	return result, nil
 }
+
+func (s *FileStorage) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]UserURLs, error) {
+	if len(userID) == 0 {
+		return nil, nil
+	}
+	var result []UserURLs
+	for _, v := range s.List {
+		if v.UserID == userID.String() {
+			var u UserURLs
+			u.ShortURL = v.ShortURL
+			u.OriginalURL = v.OriginalURL
+
+			result = append(result, u)
+
+		}
+	}
+	return result, nil
+}

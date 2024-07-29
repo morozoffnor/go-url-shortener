@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+var ContextUserID = "user_id"
+
 type JWT struct {
 	config *config.Config
 }
@@ -91,7 +93,7 @@ func (h *JWT) AddTokenToCookies(w *http.ResponseWriter, r *http.Request) (contex
 		return nil, err
 	}
 
-	ctx := context.WithValue(r.Context(), "user_id", claims.UserID)
+	ctx := context.WithValue(r.Context(), ContextUserID, claims.UserID)
 
 	return ctx, nil
 }

@@ -39,7 +39,7 @@ func Auth(cfg *config.Config) func(next http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "user_id", claims.UserID)
+			ctx := context.WithValue(r.Context(), auth.ContextUserID, claims.UserID)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)

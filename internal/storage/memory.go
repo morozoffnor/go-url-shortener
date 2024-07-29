@@ -73,3 +73,21 @@ func (s *MemoryStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]Batc
 	}
 	return result, nil
 }
+
+func (s *MemoryStorage) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]UserURLs, error) {
+	if len(userID) == 0 {
+		return nil, nil
+	}
+	var result []UserURLs
+	for _, v := range s.List {
+		if v.UserID == userID.String() {
+			var u UserURLs
+			u.ShortURL = v.ShortURL
+			u.OriginalURL = v.OriginalURL
+
+			result = append(result, u)
+
+		}
+	}
+	return result, nil
+}

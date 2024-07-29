@@ -47,11 +47,10 @@ func NewStorage(cfg *config.Config, ctx context.Context) Storage {
 		log.Print("Using database storage")
 		return NewDatabase(cfg, ctx)
 	}
-	return NewDatabase(cfg, ctx)
-	//if cfg.FileStoragePath != "" {
-	//	log.Print("Using file storage")
-	//	return NewFileStorage(cfg)
-	//}
-	//log.Print("Using memory storage")
-	//return NewMemoryStorage(cfg)
+	if cfg.FileStoragePath != "" {
+		log.Print("Using file storage")
+		return NewFileStorage(cfg)
+	}
+	log.Print("Using memory storage")
+	return NewMemoryStorage(cfg)
 }

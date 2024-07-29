@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,8 @@ func TestShortURL(t *testing.T) {
 		FileStoragePath: "/tmp/test.json",
 	}
 	strg := storage.NewMemoryStorage(cfg)
-	h := New(cfg, strg)
+	authHelper := auth.New(cfg)
+	h := New(cfg, strg, authHelper)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -95,7 +97,8 @@ func TestFullUrl(t *testing.T) {
 		FileStoragePath: "/tmp/test.json",
 	}
 	strg := storage.NewMemoryStorage(cfg)
-	h := New(cfg, strg)
+	authHelper := auth.New(cfg)
+	h := New(cfg, strg, authHelper)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()
@@ -160,7 +163,8 @@ func TestShorten(t *testing.T) {
 		FileStoragePath: "/tmp/test.json",
 	}
 	strg := storage.NewMemoryStorage(cfg)
-	h := New(cfg, strg)
+	authHelper := auth.New(cfg)
+	h := New(cfg, strg, authHelper)
 	tmpFile, err := os.CreateTemp(os.TempDir(), "dbtest*.json")
 	require.Nil(t, err)
 	defer tmpFile.Close()

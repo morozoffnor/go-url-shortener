@@ -34,11 +34,8 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	conn.Config().MaxConns = 20
 	conn.Config().MinConns = 2
 	db.conn = conn
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	//if err = db.createTable(ctx); err != nil {
-	//	panic(err)
-	//}
 	doMigrations(cfg)
 	return db
 }
