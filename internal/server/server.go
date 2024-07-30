@@ -18,6 +18,7 @@ func newRouter(h *handlers.Handlers) *chi.Mux {
 	r.Post("/api/shorten/batch", middlewares.Compress(h.BatchHandler))
 	r.Post("/api/shorten", middlewares.Compress(h.ShortenHandler))
 	r.Get("/api/user/urls", middlewares.Compress(h.GetUserURLsHandler))
+	r.Delete("/api/user/urls", middlewares.Compress(h.DeleteUserURLs))
 	return r
 }
 

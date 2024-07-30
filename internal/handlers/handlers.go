@@ -87,9 +87,13 @@ func (h *Handlers) ShortURLHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) FullURLHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	v, err := h.store.GetFullURL(ctx, r.PathValue("id"))
+	v, isDeleted, err := h.store.GetFullURL(ctx, r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Error", http.StatusBadRequest)
+		return
+	}
+	if isDeleted {
+		http.Error(w, "Deleted", http.StatusGone)
 		return
 	}
 	http.Redirect(w, r, v, http.StatusTemporaryRedirect)
@@ -236,4 +240,30 @@ func (h *Handlers) GetUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
+}
+
+func (h *Handlers) DeleteUserURLs(w http.ResponseWriter, r *http.Request) {
+	if !h.auth.CheckToken(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var ids []string
+	//var items []*storage.DeleteURLItem
+
+	rb, err := body.GetBody(r)
+	if err != nil {
+		http.Error(w, "Error parsing body", http.StatusBadRequest)
+	}
+	err = json.Unmarshal(rb, &ids)
+	if err != nil {
+		http.Error(w, "Error parsing body", http.StatusBadRequest)
+	}
+
+	if len(ids) == 0 {
+		w.WriteHeader(http.StatusAccepted)
+		return
+	}
+
+	h.store.DeleteURLs(r.Context(), r.Context().Value(authHelper.ContextUserID).(uuid.UUID), ids)
+	w.WriteHeader(http.StatusAccepted)
 }

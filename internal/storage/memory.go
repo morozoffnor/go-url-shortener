@@ -44,16 +44,16 @@ func (s *MemoryStorage) AddNewURL(ctx context.Context, full string) (string, err
 	return newURL.ShortURL, nil
 }
 
-func (s *MemoryStorage) GetFullURL(ctx context.Context, shortURL string) (string, error) {
+func (s *MemoryStorage) GetFullURL(ctx context.Context, shortURL string) (string, bool, error) {
 	if len(shortURL) < 1 {
-		return "", errors.New("no short URL provided")
+		return "", false, errors.New("no short URL provided")
 	}
 	for _, v := range s.List {
 		if v.ShortURL == shortURL {
-			return v.OriginalURL, nil
+			return v.OriginalURL, v.IsDeleted, nil
 		}
 	}
-	return "", errors.New("there is no such URL")
+	return "", false, errors.New("there is no such URL")
 }
 
 func (s *MemoryStorage) AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error) {
@@ -90,4 +90,7 @@ func (s *MemoryStorage) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]Us
 		}
 	}
 	return result, nil
+}
+
+func (s *MemoryStorage) DeleteURLs(ctx context.Context, userID uuid.UUID, urls URLsForDeletion) {
 }

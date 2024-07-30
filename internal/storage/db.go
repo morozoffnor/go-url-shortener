@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
@@ -12,7 +13,9 @@ import (
 	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
+	"github.com/morozoffnor/go-url-shortener/pkg/logger"
 	"log"
+	"sync"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -36,25 +39,25 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	db.conn = conn
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	//doMigrations(cfg)
-	err = db.createTable(ctx)
-	if err != nil {
-		panic(err)
-	}
+	doMigrations(cfg)
+	//err = db.createTable(ctx)
+	//if err != nil {
+	//	panic(err)
+	//}
 	return db
 }
 
-//func doMigrations(cfg *config.Config) {
-//	m, err := migrate.New("file://../../internal/storage/migrations", cfg.DatabaseDSN)
-//
-//	if err != nil {
-//		panic(err)
-//	}
-//	err = m.Up()
-//	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-//		panic(err)
-//	}
-//}
+func doMigrations(cfg *config.Config) {
+	m, err := migrate.New("file://internal/storage/migrations", cfg.DatabaseDSN)
+
+	if err != nil {
+		panic(err)
+	}
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		panic(err)
+	}
+}
 
 func (d *Database) Ping(ctx context.Context) bool {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
@@ -76,7 +79,8 @@ func (d *Database) createTable(ctx context.Context) error {
    	id varchar(255) PRIMARY KEY,
    	full_url varchar(500) UNIQUE NOT NULL,
    	short_url varchar(255) UNIQUE NOT NULL,
-    user_id varchar(255) NOT NULL
+    user_id varchar(255) NOT NULL,
+    is_deleted boolean NOT NULL 
 	);`
 
 	_, err = tx.Exec(ctx, query)
@@ -114,14 +118,15 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 	return shortURL, nil
 }
 
-func (d *Database) GetFullURL(ctx context.Context, shortURL string) (string, error) {
+func (d *Database) GetFullURL(ctx context.Context, shortURL string) (string, bool, error) {
 	var fullURL string
-	query := `SELECT full_url FROM urls WHERE short_url=$1`
-	err := d.conn.QueryRow(ctx, query, shortURL).Scan(&fullURL)
+	var isDeleted bool
+	query := `SELECT full_url, is_deleted FROM urls WHERE short_url=$1`
+	err := d.conn.QueryRow(ctx, query, shortURL).Scan(&fullURL, &isDeleted)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	return fullURL, nil
+	return fullURL, isDeleted, nil
 }
 
 func (d *Database) getShortURL(ctx context.Context, fullURL string) (string, error) {
@@ -194,4 +199,111 @@ func (d *Database) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]UserURL
 	}
 
 	return result, err
+}
+
+func (d *Database) DeleteURLs(ctx context.Context, userID uuid.UUID, urls URLsForDeletion) {
+	input := d.generator(ctx, userID, urls)
+	out := d.fanOut(ctx, input)
+	in := d.fanIn(ctx, out)
+	d.softDeleteURLs(ctx, in)
+}
+
+func (d *Database) generator(ctx context.Context, userID uuid.UUID, urls URLsForDeletion) chan DeleteURLItem {
+	inputCh := make(chan DeleteURLItem)
+
+	// наполняем канал айтемами
+	go func() {
+		defer close(inputCh)
+		for _, v := range urls {
+			item := DeleteURLItem{
+				UserID:   userID,
+				ShortURL: v,
+			}
+			log.Print("gen", item)
+			select {
+			case <-ctx.Done():
+				return
+			case inputCh <- item:
+			}
+		}
+	}()
+	return inputCh
+}
+
+func (d *Database) fanOut(ctx context.Context, inputCh <-chan DeleteURLItem) chan string {
+	outCh := make(chan string)
+
+	// распределяем работу: ищем айдишники урлов в базе
+	go func() {
+		defer close(outCh)
+
+		for item := range inputCh {
+			var id string
+			row := d.conn.QueryRow(ctx, "SELECT id FROM public.urls WHERE short_url = $1 AND user_id = $2", item.ShortURL, item.UserID)
+			err := row.Scan(&id)
+			if err != nil {
+				logger.Logger.Error(err)
+				continue
+			}
+			log.Print("fanOut", "sent id")
+			select {
+			case <-ctx.Done():
+				return
+			case outCh <- id:
+			}
+		}
+	}()
+
+	return outCh
+}
+
+func (d *Database) fanIn(ctx context.Context, ids ...chan string) chan string {
+	delCh := make(chan string)
+
+	var wg sync.WaitGroup
+
+	// собираем полученные айдишники в один канал
+	for _, ch := range ids {
+		wg.Add(1)
+		log.Print("fanIn", " collected id")
+		go func() {
+			defer wg.Done()
+
+			for item := range ch {
+				select {
+				case <-ctx.Done():
+					return
+				case delCh <- item:
+				}
+			}
+		}()
+	}
+
+	// ждём выполнения и закрываем канал
+	go func() {
+		wg.Wait()
+		close(delCh)
+	}()
+
+	return delCh
+}
+
+func (d *Database) softDeleteURLs(ctx context.Context, delCh chan string) {
+	var idsForDeletion []string
+	for item := range delCh {
+		idsForDeletion = append(idsForDeletion, item)
+	}
+
+	if len(idsForDeletion) == 0 {
+		return
+	}
+
+	batch := &pgx.Batch{}
+	for _, item := range idsForDeletion {
+		log.Print("batch ", item)
+		batch.Queue("UPDATE urls SET is_deleted = true WHERE id = $1", item)
+	}
+
+	br := d.conn.SendBatch(ctx, batch)
+	defer br.Close()
 }

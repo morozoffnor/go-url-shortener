@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
 	"github.com/morozoffnor/go-url-shortener/pkg/logger"
@@ -44,6 +45,8 @@ func (s *FileStorage) AddNewURL(ctx context.Context, full string) (string, error
 		UUID:        uuid.NewString(),
 		ShortURL:    chargen.CreateRandomCharSeq(),
 		OriginalURL: full,
+		UserID:      ctx.Value(auth.ContextUserID).(string),
+		IsDeleted:   false,
 	}
 	s.mu.Lock()
 	s.List = append(s.List, newURL)
@@ -52,16 +55,16 @@ func (s *FileStorage) AddNewURL(ctx context.Context, full string) (string, error
 	return newURL.ShortURL, nil
 }
 
-func (s *FileStorage) GetFullURL(ctx context.Context, shortURL string) (string, error) {
+func (s *FileStorage) GetFullURL(ctx context.Context, shortURL string) (string, bool, error) {
 	if len(shortURL) < 1 {
-		return "", errors.New("no short URL provided")
+		return "", false, errors.New("no short URL provided")
 	}
 	for _, v := range s.List {
 		if v.ShortURL == shortURL {
-			return v.OriginalURL, nil
+			return v.OriginalURL, v.IsDeleted, nil
 		}
 	}
-	return "", errors.New("there is no such URL")
+	return "", false, errors.New("there is no such URL")
 }
 
 func (s *FileStorage) SaveToFile(URLToSave *url) error {
@@ -137,4 +140,8 @@ func (s *FileStorage) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]User
 		}
 	}
 	return result, nil
+}
+
+func (s *FileStorage) DeleteURLs(ctx context.Context, userID uuid.UUID, urls URLsForDeletion) {
+
 }
