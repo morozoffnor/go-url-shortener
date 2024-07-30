@@ -39,11 +39,11 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	db.conn = conn
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	doMigrations(cfg)
-	//err = db.createTable(ctx)
-	//if err != nil {
-	//	panic(err)
-	//}
+	//doMigrations(cfg)
+	err = db.createTable(ctx)
+	if err != nil {
+		panic(err)
+	}
 	return db
 }
 
@@ -80,7 +80,7 @@ func (d *Database) createTable(ctx context.Context) error {
    	full_url varchar(500) UNIQUE NOT NULL,
    	short_url varchar(255) UNIQUE NOT NULL,
     user_id varchar(255) NOT NULL,
-    is_deleted boolean NOT NULL 
+    is_deleted boolean NOT NULL DEFAULT false
 	);`
 
 	_, err = tx.Exec(ctx, query)
