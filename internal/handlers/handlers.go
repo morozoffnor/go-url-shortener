@@ -12,6 +12,7 @@ import (
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
 	"github.com/morozoffnor/go-url-shortener/pkg/body"
+	"github.com/morozoffnor/go-url-shortener/pkg/logger"
 	"log"
 	"net/http"
 	urlLib "net/url"
@@ -89,6 +90,7 @@ func (h *Handlers) FullURLHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	v, isDeleted, err := h.store.GetFullURL(ctx, r.PathValue("id"))
 	if err != nil {
+		logger.Logger.Error(err)
 		http.Error(w, "Error", http.StatusBadRequest)
 		return
 	}
