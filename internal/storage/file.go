@@ -45,7 +45,7 @@ func (s *FileStorage) AddNewURL(ctx context.Context, full string) (string, error
 		UUID:        uuid.NewString(),
 		ShortURL:    chargen.CreateRandomCharSeq(),
 		OriginalURL: full,
-		UserID:      ctx.Value(auth.ContextUserID).(string),
+		UserID:      ctx.Value(auth.ContextUserID).(uuid.UUID).String(),
 		IsDeleted:   false,
 	}
 	s.mu.Lock()

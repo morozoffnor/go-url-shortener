@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
 	"sync"
@@ -37,6 +38,8 @@ func (s *MemoryStorage) AddNewURL(ctx context.Context, full string) (string, err
 		UUID:        uuid.NewString(),
 		ShortURL:    chargen.CreateRandomCharSeq(),
 		OriginalURL: full,
+		UserID:      ctx.Value(auth.ContextUserID).(uuid.UUID).String(),
+		IsDeleted:   false,
 	}
 	s.mu.Lock()
 	s.List = append(s.List, newURL)
