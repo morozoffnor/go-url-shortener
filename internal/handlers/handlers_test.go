@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/internal/storage"
@@ -69,7 +70,7 @@ func TestShortURL(t *testing.T) {
 				request := httptest.NewRequest(http.MethodPost, "/", rBody)
 
 				w := httptest.NewRecorder()
-
+				request = request.WithContext(context.WithValue(request.Context(), auth.ContextUserID, uuid.New()))
 				h.ShortURLHandler(w, request)
 
 				res := w.Result()
@@ -136,12 +137,15 @@ func TestFullUrl(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
+			ctx = context.WithValue(ctx, auth.ContextUserID, uuid.New())
 			url, _ := strg.AddNewURL(ctx, "http://test.xyz/")
 			if !test.want.checkLocation {
 				url = "DoNotCare"
 			}
 			request := httptest.NewRequest(http.MethodGet, "/"+url, nil)
 			request.SetPathValue("id", url)
+			rctx := context.WithValue(request.Context(), auth.ContextUserID, uuid.New())
+			request = request.WithContext(rctx)
 			w := httptest.NewRecorder()
 			h.FullURLHandler(w, request)
 
@@ -214,7 +218,8 @@ func TestShorten(t *testing.T) {
 				jsonReqBody, err := json.Marshal(body)
 				require.NoError(t, err)
 				request := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonReqBody))
-
+				ctx := context.WithValue(request.Context(), auth.ContextUserID, uuid.New())
+				request = request.WithContext(ctx)
 				w := httptest.NewRecorder()
 				h.ShortenHandler(w, request)
 
