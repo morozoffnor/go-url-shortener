@@ -98,7 +98,7 @@ func (d *Database) AddNewURL(ctx context.Context, fullURL string) (string, error
 	shortURL := chargen.CreateRandomCharSeq()
 	id := uuid.NewString()
 
-	query := `INSERT INTO urls (id, full_url, short_url, user_id, is_deleted) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO urls (id, full_url, short_url, user_id, is_deleted) VALUES ($1, $2, $3, $4, $5)`
 	_, err = tx.Exec(ctx, query, id, fullURL, shortURL, ctx.Value(auth.ContextUserID), false)
 	if err != nil {
 		var pgErr *pgconn.PgError

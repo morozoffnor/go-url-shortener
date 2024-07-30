@@ -142,6 +142,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 			short := &resBody{Result: h.Cfg.ResultAddr + "/" + url}
 			resp, err := json.Marshal(short)
 			if err != nil {
+				logger.Logger.Error(err)
 				http.Error(w, "Fail during serializing", http.StatusInternalServerError)
 				return
 			}
@@ -149,6 +150,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write(resp)
 			return
 		}
+		logger.Logger.Error(err)
 		http.Error(w, "Unexpected internal error", http.StatusInternalServerError)
 		return
 	}
@@ -157,6 +159,7 @@ func (h *Handlers) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	short := &resBody{Result: h.Cfg.ResultAddr + "/" + url}
 	resp, err := json.Marshal(short)
 	if err != nil {
+		logger.Logger.Error(err)
 		http.Error(w, "Fail during serializing", http.StatusInternalServerError)
 		return
 	}
