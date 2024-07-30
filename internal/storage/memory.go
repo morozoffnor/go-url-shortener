@@ -7,6 +7,7 @@ import (
 	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/morozoffnor/go-url-shortener/pkg/chargen"
+	"log"
 	"sync"
 )
 
@@ -96,4 +97,116 @@ func (s *MemoryStorage) GetUserURLs(ctx context.Context, userID uuid.UUID) ([]Us
 }
 
 func (s *MemoryStorage) DeleteURLs(ctx context.Context, userID uuid.UUID, urls URLsForDeletion) {
+	input := s.generator(ctx, userID, urls)
+	out := s.fanOut(ctx, input)
+	in := s.fanIn(ctx, out)
+	s.softDeleteURLs(ctx, in)
+}
+
+func (s *MemoryStorage) generator(ctx context.Context, userID uuid.UUID, urls URLsForDeletion) chan DeleteURLItem {
+	inputCh := make(chan DeleteURLItem)
+
+	// наполняем канал айтемами
+	go func() {
+		defer close(inputCh)
+		for _, v := range urls {
+			item := DeleteURLItem{
+				UserID:   userID,
+				ShortURL: v,
+			}
+			log.Print("gen", item)
+			select {
+			case <-ctx.Done():
+				return
+			case inputCh <- item:
+			}
+		}
+	}()
+	return inputCh
+}
+
+func (s *MemoryStorage) fanOut(ctx context.Context, inputCh <-chan DeleteURLItem) chan string {
+	outCh := make(chan string)
+
+	// распределяем работу: ищем айдишники урлов в базе
+	go func() {
+		defer close(outCh)
+
+		for item := range inputCh {
+			var id string
+			for _, v := range s.List {
+				if item.ShortURL == v.ShortURL && item.UserID.String() == v.UserID {
+					id = v.UUID
+				}
+			}
+			if id == "" {
+				continue
+			}
+			log.Print("fanOut", "sent id")
+			select {
+			case <-ctx.Done():
+				return
+			case outCh <- id:
+			}
+		}
+	}()
+
+	return outCh
+}
+
+func (s *MemoryStorage) fanIn(ctx context.Context, ids ...chan string) chan string {
+	delCh := make(chan string)
+
+	var wg sync.WaitGroup
+
+	// собираем полученные айдишники в один канал
+	for _, ch := range ids {
+		wg.Add(1)
+		log.Print("fanIn", " collected id")
+		go func() {
+			defer wg.Done()
+
+			for item := range ch {
+				select {
+				case <-ctx.Done():
+					return
+				case delCh <- item:
+				}
+			}
+		}()
+	}
+
+	// ждём выполнения и закрываем канал
+	go func() {
+		wg.Wait()
+		close(delCh)
+	}()
+
+	return delCh
+}
+
+func (s *MemoryStorage) softDeleteURLs(ctx context.Context, delCh chan string) {
+	var idsForDeletion []string
+	for item := range delCh {
+		idsForDeletion = append(idsForDeletion, item)
+	}
+
+	if len(idsForDeletion) == 0 {
+		return
+	}
+
+	// лочим мьютекс
+	s.mu.Lock()
+
+	// ищем айдишники и "удаляем"
+	for _, v := range s.List {
+		for _, w := range idsForDeletion {
+			if v.UUID == w {
+				v.IsDeleted = true
+			}
+		}
+	}
+
+	// убираем лок с мьютекса
+	s.mu.Unlock()
 }
