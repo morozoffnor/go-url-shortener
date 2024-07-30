@@ -99,7 +99,7 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			shortURL, _ := strg.AddNewURL(ctx, test.URLs[0].OriginalURL)
-			full, err := strg.GetFullURL(ctx, shortURL)
+			full, _, err := strg.GetFullURL(ctx, shortURL)
 			defer cancel()
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)
