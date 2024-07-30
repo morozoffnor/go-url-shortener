@@ -39,11 +39,11 @@ func NewDatabase(cfg *config.Config, ctx context.Context) *Database {
 	db.conn = conn
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	//doMigrations(cfg)
-	err = db.createTable(ctx)
-	if err != nil {
-		panic(err)
-	}
+	doMigrations(cfg)
+	//err = db.createTable(ctx)
+	//if err != nil {
+	//	panic(err)
+	//}
 	return db
 }
 
