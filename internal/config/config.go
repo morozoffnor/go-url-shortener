@@ -11,6 +11,7 @@ type Config struct {
 	ServerAddr      string
 	FileStoragePath string
 	DatabaseDSN     string
+	JWTSecret       string
 }
 
 func (c *Config) UpdateByOptions(o *ServerConfigFlags) {
@@ -39,6 +40,10 @@ func (c *Config) PopulateConfigFromEnv() {
 	if ddsn != "" {
 		c.DatabaseDSN = ddsn
 	}
+	jwt := os.Getenv("JWT_SECRET")
+	if jwt != "" {
+		c.JWTSecret = jwt
+	}
 }
 
 func New() *Config {
@@ -46,6 +51,7 @@ func New() *Config {
 		ServerAddr:      ":8080",
 		ResultAddr:      "http://localhost:8080",
 		FileStoragePath: "",
+		JWTSecret:       "secret",
 	}
 	c.UpdateByOptions(Flags)
 	c.PopulateConfigFromEnv()

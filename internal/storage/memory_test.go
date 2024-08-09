@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"github.com/morozoffnor/go-url-shortener/internal/auth"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,6 +49,7 @@ func TestUrlStorage_addNewUrl(t *testing.T) {
 
 			for _, full := range test.urls {
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				ctx = context.WithValue(ctx, auth.ContextUserID, uuid.New())
 				result, err := strg.AddNewURL(ctx, full)
 				defer cancel()
 				require.NoError(t, err)
@@ -98,8 +101,9 @@ func TestUrlStorage_getFullUrl(t *testing.T) {
 			defer tmpFile.Close()
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx = context.WithValue(ctx, auth.ContextUserID, uuid.New())
 			shortURL, _ := strg.AddNewURL(ctx, test.URLs[0].OriginalURL)
-			full, err := strg.GetFullURL(ctx, shortURL)
+			full, _, err := strg.GetFullURL(ctx, shortURL)
 			defer cancel()
 			if !test.wantErr {
 				require.Equal(t, "http://test.com", full)

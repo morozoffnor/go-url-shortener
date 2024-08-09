@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/morozoffnor/go-url-shortener/internal/config"
 	"log"
 )
@@ -9,7 +10,14 @@ import (
 //go:generate mockgen -source=storage.go -destination=mock/storage.go -package=mock
 
 type url struct {
-	UUID        string `json:"uuid"`
+	UserID      string `json:"user_id" db:"user_id"`
+	UUID        string `json:"uuid" db:"id"`
+	ShortURL    string `json:"short_url" db:"short_url"`
+	OriginalURL string `json:"original_url" db:"full_url"`
+	IsDeleted   bool   `json:"is_deleted" db:"is_deleted"`
+}
+
+type UserURLs struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
@@ -24,10 +32,19 @@ type BatchOutput struct {
 	CorrelationID string `json:"correlation_id"`
 }
 
+type URLsForDeletion []string
+
+type DeleteURLItem struct {
+	ShortURL string
+	UserID   uuid.UUID
+}
+
 type Storage interface {
 	AddNewURL(ctx context.Context, full string) (string, error)
-	GetFullURL(ctx context.Context, shortURL string) (string, error)
+	GetFullURL(ctx context.Context, shortURL string) (string, bool, error)
 	AddBatch(ctx context.Context, urls []BatchInput) ([]BatchOutput, error)
+	GetUserURLs(ctx context.Context, userID uuid.UUID) ([]UserURLs, error)
+	DeleteURLs(ctx context.Context, userID uuid.UUID, urls URLsForDeletion)
 }
 
 type Pingable interface {
